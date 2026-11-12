@@ -1085,8 +1085,9 @@ function checkout(){
 // Видна админам: бот даёт им кнопку магазина с ключом в адресе (#adm=…). Ключ расшифровывает заказы.
 // Без Telegram (просмотр макета) панель открыта в демо-режиме: сохранение применяется только на этом экране.
 const ADMKEY = (location.hash.match(/adm=([0-9a-f]{64})/) || [])[1] || '';
-const IS_ADMIN = !!ADMKEY || !TG;
-const DEMO = !TG;
+// демо-админка — только в превью (файл на компьютере / артефакт), на настоящем сайте её нет
+const DEMO = !TG && (location.protocol === 'file:' || /claude|localhost|127\.0\.0\.1/.test(location.hostname));
+const IS_ADMIN = !!ADMKEY || DEMO;
 let PEND = store.get('klsd.pend', null) || { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [] };
 const pendCount = () => Object.keys(PEND.price).length + Object.keys(PEND.hide).length + Object.keys(PEND.banners).length
   + (PEND.min_order ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length;
