@@ -1103,15 +1103,19 @@ function trackHtml(o){   // отслеживание: оплата + этапы 
   return `<ol class="track"><li class="${o.pd ? 'on' : ''}">${o.pd ? 'Оплачен' : 'Не оплачен'}</li>
     ${TRACK_STEPS.map(([k, t], i) => `<li class="${at >= FLOW.indexOf(k) ? 'on' : ''}${i === cur ? ' now' : ''}">${t}</li>`).join('')}</ol>`;
 }
-async function loadMy(){
+const busyTyping = () => { const a = document.activeElement; return a && /^(INPUT|TEXTAREA)$/.test(a.tagName); };
+async function loadMy(quiet){   // quiet — фоновая проверка: перерисовать, только если что-то поменялось
   if (DEMO && !UKEY.length){ MY = { at: Date.now() / 1000, orders: [{ n: 7, st: 'transit', pd: 1, t: Date.now() / 1000 - 3600, s: 3150, d: 'pickup', c: '', ed: false,
     i: Object.values(ITEMS).slice(0, 3).map(x => ({ id: x.it[0], v: 0, q: 2, price: x.it[2], title: x.it[1] })) }],
     me: { bal: 320, on: true, cfg: { ref_join: 150, ref_pct: 5, ref_cap: 15 }, ref: null, hist: [{ t: Date.now() / 1000 - 9e4, a: 150, r: 'друг Аня в клубе' }, { t: Date.now() / 1000 - 4e4, a: 170, r: 'заказ друга Аня №5' }] } }; return; }
   if (!UKEY.length){ myErr = 'Профиль откроется, когда бот обновит твою кнопку «🛒 Магазин» — отправь ему /start'; return; }
   try {
     const r = await fetch('u/' + UKEY[0] + '.enc?' + Date.now(), { cache: 'no-store' });
-    MY = r.status === 404 ? { at: 0, orders: [] } : await unsealOrders(UKEY[1], await r.text()); myErr = '';
-  } catch (e){ myErr = 'Не получилось загрузить заказы: ' + e.message; }
+    const nw = r.status === 404 ? { at: 0, orders: [] } : await unsealOrders(UKEY[1], await r.text());
+    if (quiet && MY && nw.at === MY.at) return;   // ничего нового
+    MY = nw; myErr = '';
+  } catch (e){ if (quiet) return; myErr = 'Не получилось загрузить заказы: ' + e.message; }
+  if (quiet && (busyTyping() || stack.some(x => x._flip))){ meDot(); return; }   // не мешаем: печатает или смотрит визитку
   meDot(); if (['me', 'cart'].includes(topKind())) refreshSheets();   // баланс монеток виден и в корзине
 }
 function cycleStart(now = new Date()){
@@ -1170,7 +1174,7 @@ function refBlock(el){
       <img class="cardfr" src="card_front.jpg" alt="Визитка КЛСД — лицо"><img class="cardbk" src="${me.card || ''}" alt="Визитка КЛСД — оборот с твоим QR"></div></div></div>
     <div class="flipbar${el._flip ? ' run' : ''}"><i></i></div>
     <div class="mym center">${el._flip ? 'через 20 секунд перевернётся обратно' : 'нажми на визитку — покажет оборот с QR'}</div>
-    <div class="reflink"><code>${esc(r.link)}</code><button data-me="copy">Копировать</button></div>
+    <div class="mym center">Покажи визитку другу — пусть наведёт камеру на QR</div>
     <div class="refstats"><div><b>${r.joined}</b><span>перешли</span></div><div><b>${r.approved}</b><span>в клубе</span></div><div><b>${r.ordered}</b><span>заказали</span></div><div><b>${r.earned}</b><span>заработано 🪙</span></div></div>
     ${bal}
     ${(r.friends || []).length ? `<div class="lbl">Друзья</div><div class="myi">${r.friends.map(f => `<div><span>${esc(f.name)}${f.un ? ' @' + esc(f.un) : ''}</span><span>${f.ok ? 'в клубе' : 'ждёт'}</span><b>${f.ord ? '🛒' : ''}</b></div>`).join('')}</div>` : ''}
@@ -1194,11 +1198,6 @@ function meEvent(e, el){
   const a = b.dataset.me, n = +b.dataset.n, o = MY && MY.orders.find(x => x.n === n);
   if (a === 'reload'){ MY = null; myErr = ''; drawSheet(el); loadMy(); return true; }
   if (a === 'flip'){ setFlip(el, !el._flip); hap(); return true; }
-  if (a === 'copy'){ const t = (MY.me && MY.me.ref || {}).link || '';
-    const old = () => { const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0;top:0';   // запасной способ
-      document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch(e){} ta.remove(); return ok; };
-    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Ссылка скопирована'),
-      () => toast(old() ? 'Ссылка скопирована' : 'Не получилось скопировать — открой ссылку из сообщения бота')); return true; }
   if (a === 'pq'){ el._pq = Math.max(5, Math.min(200, (el._pq || 10) + +b.dataset.d)); drawSheet(el); return true; }
   if (a === 'refnew' || a === 'print'){
     const p = a === 'refnew' ? { ref: 'create' } : { ref: 'print', qty: el._pq || 10 };
@@ -1497,6 +1496,18 @@ async function loadOrders(el){
   } catch (e) { ordErr = 'Не получилось загрузить заказы: ' + e.message; }
   ordLoading = false; if (el.isConnected) drawSheet(el);
 }
+async function pollOrders(){   // админка открыта на заказах/рефералке — подтягиваем новое без перезахода
+  const el = stack.find(x => x.dataset.kind === 'admin');
+  if (!el || !['orders', 'refs'].includes(el._tab) || !ADMKEY || DEMO || ordLoading || busyTyping()) return;
+  try {
+    const r = await fetch('orders.enc?' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+    const nw = await unsealOrders(ADMKEY, await r.text());
+    if (ORD && nw.at === ORD.at) return;
+    ORD = nw; if (el.isConnected) drawSheet(el); admDot();
+  } catch (e) {}
+}
+// живое обновление: пока магазин открыт, раз в 15 секунд проверяем профиль (и заказы в админке)
+setInterval(() => { if (document.hidden) return; if (UKEY.length) loadMy(true); pollOrders(); }, 15000);
 function admRefsView(el){
   if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю…</div>'; }
   if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
