@@ -1,4 +1,5 @@
 <title>КЛСД Магазин</title>
+<script src="telegram-web-app.js"></script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -429,7 +430,12 @@ pre.payload{text-align:left;background:var(--surface);border-radius:var(--r-s);p
 
 <script>
 (()=>{
-const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
+// внутри Telegram: platform != unknown (при открытии кнопкой «🛒 Магазин» initData пустой — это нормально)
+const TGW = window.Telegram && window.Telegram.WebApp;
+const TG = TGW && (TGW.initData || (TGW.platform && TGW.platform !== 'unknown')) ? TGW : null;
+// заказ боту можно отправить, только если магазин открыт кнопкой «🛒 Магазин» внизу чата (тогда initData пустой)
+const CAN_SEND = !!TG && !TG.initData;
+const OPEN_HINT = 'Чтобы оформить заказ, открой магазин кнопкой «🛒 Магазин» внизу чата с ботом';
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const rub = n => n.toLocaleString('ru-RU').replace(/\s/g,' ') + ' ₽';
@@ -966,7 +972,7 @@ function doneView(o){
     <div class="big">Заказ собран</div>
     <p>${plural(o.n, 'товар', 'товара', 'товаров')} на ${rub(o.s)}. В Telegram он сразу уйдёт продавцу, а вам придёт подтверждение от бота.</p>
     <p><span class="mock">макет</span></p></div>
-    <div class="lbl">Что получит бот</div><pre class="payload">${esc(o.json)}</pre>
+    ${DEMO ? `<div class="lbl">Что получит бот</div><pre class="payload">${esc(o.json)}</pre>` : ''}
     <button class="more" id="again">Вернуться в каталог</button></div>`;
 }
 document.addEventListener('click', e => { if (e.target.id === 'again'){ while (stack.length) closeSheet(); window.scrollTo({ top: 0 }); } });
@@ -1010,7 +1016,8 @@ function checkout(){
   // компактно, чтобы влезть в лимит Telegram sendData (4096 байт): [id, вариант, кол-во]
   const payload = { v: C.v, i: rows.map(c => [c.it[0], c.v, c.q]), d: delivery, c: (store.get('klsd.comment', '') || '').slice(0, 300) };
   const json = JSON.stringify(payload);
-  if (TG){ hap('medium'); TG.sendData(json); return; }   // Telegram закроет приложение, заказ придёт боту
+  if (CAN_SEND){ hap('medium'); TG.sendData(json); return; }   // Telegram закроет приложение, заказ придёт боту
+  if (!DEMO){ toast(OPEN_HINT); return; }                       // корзина не теряется
   cart = {}; store.set('klsd.cart', cart); store.set('klsd.comment', '');
   while (stack.length) { stack.pop().remove(); }
   openSheet('done', '', { _order: { n: t.n, s: t.s, json } });
@@ -1203,7 +1210,10 @@ async function loadOrders(el){
   await new Promise(r => setTimeout(r, 0));   // дорисовать «Загружаю…» до подмены
   try {
     if (DEMO || !ADMKEY) ORD = DEMO_ORDERS();
-    else ORD = await unsealOrders(ADMKEY, await (await fetch('orders.enc?' + Date.now(), { cache: 'no-store' })).text());
+    else {
+      const r = await fetch('orders.enc?' + Date.now(), { cache: 'no-store' });
+      ORD = r.status === 404 ? { at: 0, orders: [] } : await unsealOrders(ADMKEY, await r.text());   // 404 — заказов ещё не было
+    }
   } catch (e) { ordErr = 'Не получилось загрузить заказы: ' + e.message; }
   ordLoading = false; if (el.isConnected) drawSheet(el);
 }
@@ -1218,7 +1228,7 @@ function admOrdersView(el){
   const sum = list.reduce((a, o) => a + o.s, 0);
   const when = t => new Date(t * 1000).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   return `<div class="admsec">
-    <div class="ordtop"><span>${ORD.demo ? 'демо-заказы для примера' : 'обновлено ' + when(ORD.at)}</span><button class="pill ghost" data-adm="reload">↻ Обновить</button></div>
+    <div class="ordtop"><span>${ORD.demo ? 'демо-заказы для примера' : ORD.at ? 'обновлено ' + when(ORD.at) : 'заказов ещё не было'}</span><button class="pill ghost" data-adm="reload">↻ Обновить</button></div>
     <div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) => `<button data-ofil="${k}" aria-pressed="${k === f}">${t} <small>${ORD.orders.filter(o => fn({ ...o, st: st(o) })).length}</small></button>`).join('')}</div>
     <div class="ordsum">${plural(list.length, 'заказ', 'заказа', 'заказов')} на ${rub(sum)}</div>
     ${list.map(o => { const s0 = st(o), pend = s0 !== o.st, open = (el._oopen || {})[o.n];
@@ -1290,7 +1300,8 @@ function admPayload(){
 function admSave(){
   const p = admPayload(), json = JSON.stringify(p);
   if (new Blob([json]).size > 4000){ toast('Слишком много изменений за раз — сохрани часть и продолжи'); return; }
-  if (TG){ hap('medium'); store.set('klsd.pend', null); TG.sendData(json); return; }   // приложение закроется, бот ответит в чате
+  if (CAN_SEND){ hap('medium'); store.set('klsd.pend', null); TG.sendData(json); return; }   // приложение закроется, бот ответит в чате
+  if (!DEMO){ toast('Сохранить можно, только если магазин открыт кнопкой «🛒 Магазин» внизу чата с ботом'); return; }
   // демо: применяем на этом экране
   S = S || {};
   for (const [k, v] of Object.entries(p.price || {})){ S.price = S.price || {}; if (v) S.price[k] = v; else delete S.price[k]; }
