@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>КЛСД Магазин</title>
 <script src="telegram-web-app.js"></script>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -259,6 +260,58 @@ button{cursor:pointer;border:0;background:none;padding:0}
 .ordh{width:100%;text-align:left;display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;padding:12px 14px;align-items:center}
 .ordh b{font-family:var(--f-display)}
 .ost2{grid-column:2/4;justify-self:start;font-size:12px;font-weight:700;color:var(--c)}
+/* профиль покупателя */
+.osum{grid-row:1/3;grid-column:3;font-weight:700;font-variant-numeric:tabular-nums}
+.obody{padding:0 14px 14px}
+.coins{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin:8px 0}
+.coins b{font-family:var(--f-display);font-size:22px}
+.coins small{grid-column:1/3;color:var(--muted);font-size:12.5px}
+.refhello{background:linear-gradient(120deg,#FFD9E8,#DDEEFF 60%,#EDE2FF);color:#141414;border-radius:18px;padding:18px;margin:8px 0}
+.rh1{font-family:Pangolin,var(--f-display);font-size:26px;line-height:1.1}
+.refhello p{margin:8px 0;font-size:14.5px;line-height:1.4}
+.refhello ul{margin:0 0 14px;padding-left:18px;font-size:14px;line-height:1.55}
+.refgo{min-height:46px;padding:0 18px;border-radius:13px;background:#141414;color:#fff;font-weight:700;width:100%}
+.flip{perspective:1100px;margin:10px auto 2px;max-width:420px;cursor:pointer}
+.flipin{position:relative;aspect-ratio:1243/714;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.2,.8,.2,1);animation:cardwob 6s ease-in-out infinite}
+.flipin.flipped{transform:rotateY(180deg);animation:none}
+.flipin img{position:absolute;inset:0;width:100%;height:100%;border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 14px 34px rgba(0,0,0,.35);object-fit:cover}
+.flipin .cardbk{transform:rotateY(180deg)}
+@keyframes cardwob{0%,100%{transform:rotateY(-14deg) rotateX(4deg)}50%{transform:rotateY(14deg) rotateX(-3deg)}}
+@media (prefers-reduced-motion:reduce){.flipin{animation:none;transition:none}}
+.center{text-align:center}
+.reflink{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 12px;margin:10px 0}
+.reflink code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.reflink button{min-height:36px;padding:0 12px;border-radius:9px;background:var(--line);font-weight:700;color:var(--ink)}
+.refstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.refstats div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+.refstats b{display:block;font-family:var(--f-display);font-size:19px}
+.refstats span{font-size:11.5px;color:var(--muted)}
+.printrow{display:flex;gap:10px;align-items:center}
+.printrow .refgo{flex:1;width:auto}
+.coinpay{display:flex;gap:10px;align-items:flex-start;margin:6px 0;padding:12px 14px;border-radius:14px;background:#FFF1D6;color:#3D2A00;border:1px solid #F3C66B;font-weight:600;font-size:14px}
+.coinpay input{width:20px;height:20px;margin-top:1px;flex:none}
+.coinpay small{display:block;font-weight:500;opacity:.8;font-size:12.5px;margin-top:2px}
+.total.pay strong{color:#1b8f2f}
+.mytot.sub{border-top:0;padding-top:0;margin-top:4px;color:var(--muted);font-size:14px}
+.myi.hist b{font-variant-numeric:tabular-nums}
+.myi b.plus{color:#1b8f2f}
+.coinform{display:grid;grid-template-columns:1fr 1.4fr auto;gap:6px;margin:10px 0}
+.coinform input{min-width:0;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 10px;font:inherit;font-size:14px}
+.coinform button{min-height:40px;padding:0 12px;border-radius:10px;background:var(--accent);color:var(--accent-ink,#fff);font-weight:700}
+.myord{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin:8px 0}
+.myh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.myh b{font-size:16px}
+.mym{color:var(--muted);font-size:13px;margin-top:4px}
+.myi{margin-top:10px;display:grid;gap:6px;font-size:14px}
+.myi div{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:baseline}
+.myi span:nth-child(2){color:var(--muted)}
+.mytot{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.mybtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.mybtns button{min-height:44px;border-radius:12px;font-weight:700;background:var(--line);color:var(--ink)}
+.mybtns button:first-child{background:var(--accent);color:var(--accent-ink,#fff)}
+.mybtns button.armed{background:#a3001a;color:#fff}
+.editbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0 8px;padding:10px 14px;border-radius:14px;background:#E8EDFF;color:#1d2a7a;font-weight:600;font-size:14px}
+.editbar button{color:inherit;text-decoration:underline;font-weight:600;min-height:32px}
 .ordw{grid-column:1/3;font-weight:700}.ordw small{color:var(--muted);font-weight:500}
 .ordm{grid-column:1/3;color:var(--muted);font-size:12px}
 .ords{grid-column:3;grid-row:3/5;font-family:var(--f-display);font-weight:600}
@@ -330,6 +383,13 @@ button{cursor:pointer;border:0;background:none;padding:0}
 .shead .ttl{font-weight:700;font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .back{width:40px;height:40px;border-radius:50%;background:var(--surface);display:grid;place-items:center;flex:none}
 .back svg{width:20px;height:20px}
+/* вторая кнопка «назад» — внизу, под большой палец */
+.fback{position:fixed;z-index:46;left:max(14px,calc(50% - 266px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);display:grid;place-items:center;box-shadow:0 6px 22px rgba(0,0,0,.28)}
+.fback svg{width:22px;height:22px}
+.fback[hidden]{display:none}
+body.barup .fback{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+.sheet::after{content:"";display:block;height:76px}
 .hero{border-radius:var(--r);aspect-ratio:2/1;max-width:100%}
 .hero .mono{font-size:64px;left:18px;bottom:10px}
 .hero .mono.long{font-size:48px}
@@ -411,6 +471,10 @@ pre.payload{text-align:left;background:var(--surface);border-radius:var(--r-s);p
   <header class="top pad">
     <div class="brandrow">
       <button class="logo" id="home" aria-label="На главную"><img class="lgimg" src="data:image/webp;base64,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" alt=""><span><span class="lgt">КЛСД</span><small id="ver">загрузка…</small></span></button>
+      <button class="iconbtn" id="meBtn" aria-label="Профиль">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.8"/><path d="M4.5 20.2c1.3-3.6 4.2-5.4 7.5-5.4s6.2 1.8 7.5 5.4"/></svg>
+        <span class="dot" id="meDot" hidden>!</span>
+      </button>
       <button class="iconbtn" id="cartBtn" aria-label="Корзина">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h2.2l2.3 11.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2l1.7-7.3H6"/><circle cx="9.5" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
         <span class="dot" id="cartDot" hidden>0</span>
@@ -427,6 +491,7 @@ pre.payload{text-align:left;background:var(--surface);border-radius:var(--r-s);p
 </div>
 <div class="cartbar pad" id="cartbar" hidden><div class="inbar"><button class="cta" id="cta"></button></div></div>
 <div id="sheets"></div>
+<button class="fback" id="fback" aria-label="Назад" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
 
 <script>
 (()=>{
@@ -445,6 +510,8 @@ const store = { get(k, d){ try { const v = localStorage.getItem(k); return v ? J
                 set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
 const hap = t => { try { TG && TG.HapticFeedback.impactOccurred(t || 'light'); } catch(e){} };
 
+const IND_DEF = { ind_min1: 10000, ind_min2: 4000, ind_profit: 5000, ind_ship: 700, ref_join: 150, ref_pct: 5, ref_cap: 15 };   // индивидуальный заказ (вне сбора)
+const indCfg = k => +((S && S[k]) || IND_DEF[k]);
 let MIN_ORDER = 2500;   // минимальная сумма заказа, ₽ (бот проверяет то же самое; админ может поменять)
 let C, ITEMS = {}, LINES = {}, RAW_CATALOG = null, ADM_LINES = {}, CATNAME = {};
 let S = {};              // настройки админа: settings.json (свои цены, скрытые позиции, фото, баннеры, минималка)
@@ -504,6 +571,7 @@ function init(data, again){
     TG.BackButton.onClick(() => closeSheet()); TG.MainButton.onClick(() => onCta()); }
   if (!again && IS_ADMIN && !$('#admBtn')){ const h = $('#home'), w = document.createElement('div'); w.className = 'brandl'; h.before(w); w.append(h); w.insertAdjacentHTML('beforeend', admBtnHtml());
     $('#admBtn').addEventListener('click', () => { if (topKind() !== 'admin') openSheet('admin'); }); admDot(); }
+  if (!again) loadMy();   // профиль: свои заказы (для проверки «один заказ за сбор» и значка на кнопке)
   renderRail(); renderMain(); renderCart();
 }
 
@@ -869,6 +937,10 @@ function openSheet(kind, arg, extra){
     const bb = e.target.closest('[data-boost]'); if (bb){ const bk = BOOSTER + '|0'; cart[bk] = (cart[bk] || 0) + +bb.dataset.boost;
       store.set('klsd.cart', cart); hap(); refreshSheets(); renderCart(); return; }
     const d = e.target.closest('[data-del]'); if (d){ delivery = d.dataset.del; store.set('klsd.delivery', delivery); drawSheet(el); return; }
+    if (kind === 'me' && meEvent(e, el)) return;
+    if (e.target.closest('[data-unedit]')){ stopEdit(); drawSheet(el); renderCart(); return; }
+    const cc = e.target.closest('[data-coins]'); if (cc){ useCoins = cc.checked; store.set('klsd.usecoins', useCoins); hap(); drawSheet(el); renderCart(); return; }
+    if (e.target.closest('[data-restore]')){ const sc = store.get('klsd.sentcart', null); if (sc){ cart = sc.cart || {}; store.set('klsd.cart', cart); hap(); refreshSheets(); renderCart(); } return; }
   });
   el.addEventListener('input', e => { if (e.target.id === 'aq'){ el._aq = e.target.value; const pos = e.target.selectionStart; drawSheet(el); const i = el.querySelector('#aq'); i.focus(); i.setSelectionRange(pos, pos); return; }
                                       if ((kind === 'admin' || kind === 'aline') && admInput(e)) return;
@@ -893,6 +965,7 @@ function drawSheet(el){
   else if (el.dataset.kind === 'done') el.innerHTML = doneView(el._order);
   else if (el.dataset.kind === 'admin') el.innerHTML = adminView(el);
   else if (el.dataset.kind === 'aline') el.innerHTML = alineView(el);
+  else if (el.dataset.kind === 'me') el.innerHTML = meView(el);
   el.scrollTop = keepScroll;
 }
 function lineView(l, el){
@@ -938,11 +1011,28 @@ function clearCart(el){
 function cartLines(){
   return Object.entries(cart).map(([k, q]) => { const [id, v] = k.split('|'); const x = ITEMS[id]; return x ? { k, q, it: x.it, l: x.l, v: +v } : null; }).filter(Boolean);
 }
+function indReady(){
+  if (orderPhase().cls === 'r') return false;          // идёт общий сбор — обычный заказ
+  const by = {};
+  for (const c of cartLines()){ const s = srcOf(c.it, c.l) || 1; by[s] = (by[s] || 0) + c.q * c.it[2]; }
+  const ks = Object.keys(by);
+  return ks.length > 0 && ks.every(k => by[k] >= indCfg('ind_min' + k));
+}
+let useCoins = !!store.get('klsd.usecoins', false);
+function coinsMax(sum){   // сколько монеток можно списать: не больше баланса и cap% заказа (бот проверит то же)
+  const me = MY && MY.me; if (!me) return { max: 0, bal: 0, cap: 0 };
+  const own = EDIT ? ((MY.orders.find(o => o.n === EDIT) || {}).co || 0) : 0;
+  const bal = (me.bal || 0) + own, cap = (me.cfg || {}).ref_cap || 15;
+  return { max: Math.max(0, Math.min(bal, Math.floor(sum * cap / 100))), bal, cap };
+}
 function totals(){ let n = 0, s = 0; for (const c of cartLines()){ n += c.q; s += c.q * c.it[2]; } return { n, s }; }
 function cartView(){
   const rows = cartLines(), t = totals();
-  if (!rows.length) return `<div class="inner pad"><div class="shead">${backSvg}<div class="ttl">Корзина</div></div><div class="empty">а мог бы заказать чето....</div></div>`;
+  const sc = store.get('klsd.sentcart', null), canRestore = sc && Date.now() - sc.at < 3 * 86400e3 && !EDIT;
+  if (!rows.length) return `<div class="inner pad"><div class="shead">${backSvg}<div class="ttl">Корзина</div></div><div class="empty">а мог бы заказать чето....</div>
+    ${canRestore ? `<button class="more" data-restore>Вернуть прошлый набор</button>` : ''}</div>`;
   return `<div class="inner pad">
+    ${EDIT ? `<div class="editbar"><span>✏️ Редактируешь заказ №${EDIT}</span><button data-unedit>не менять</button></div>` : ''}
     <div class="shead">${backSvg}<div class="ttl">Корзина · ${plural(t.n, 'товар', 'товара', 'товаров')}</div>
       <button class="clearcart${clearArm ? ' armed' : ''}" data-clear>${clearArm ? 'Точно очистить?' : 'Очистить'}</button></div>
     <div class="prenote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>
@@ -959,12 +1049,120 @@ function cartView(){
       return `<div class="booster"><div class="txt"><b>Salt бустер</b><span>20 мг на 30 мл · ${rub(it[2])} · ${WH[srcOf(it, ITEMS[BOOSTER].l)]}</span><span class="${need && q < need ? 'need' : ''}">${hint}</span></div>
         ${need > q ? `<button class="bplus" data-boost="${need - q}">+ ${need - q} шт</button>` : stepper(bk, q)}</div>`; })() : ''}
     <div class="total"><span>Итого</span><strong>${rub(t.s)}</strong></div>
+    ${(() => { const c = coinsMax(t.s); if (!c.max) return '';
+      return `<label class="coinpay"><input type="checkbox" data-coins ${useCoins ? 'checked' : ''}><span>Списать монетки: −${rub(c.max)}<small>на балансе ${c.bal} 🪙 · до ${c.cap}% заказа</small></span></label>
+      ${useCoins ? `<div class="total pay"><span>К оплате</span><strong>${rub(t.s - c.max)}</strong></div>` : ''}`; })()}
     <div class="minbar ${t.s >= MIN_ORDER ? 'ok' : ''}"><div class="track"><i style="width:${Math.min(100, Math.round(t.s / MIN_ORDER * 100))}%"></i></div>
       <span>${t.s >= MIN_ORDER ? `Минимальная сумма ${rub(MIN_ORDER)} набрана` : `Минимальный заказ — ${rub(MIN_ORDER)}. Добавь ещё ${rub(MIN_ORDER - t.s)}`}</span></div>
     <div class="lbl">Получение</div>
     <div class="seg"><button data-del="pickup" aria-pressed="${delivery === 'pickup'}">Самовывоз</button><button data-del="courier" aria-pressed="${delivery === 'courier'}">Доставка</button></div>
     <label class="field" for="comment"><div class="lbl">Комментарий</div><textarea id="comment" rows="2" placeholder="нацарапай заметочьку">${esc(store.get('klsd.comment', ''))}</textarea></label>
   </div>`;
+}
+/* ---------- профиль покупателя: его заказы (файл u/<имя>.enc, ключ — в его кнопке «🛒 Магазин») ---------- */
+const UKEY = (location.hash.match(/u=([0-9a-f]{16})\.([0-9a-f]{64})/) || []).slice(1);
+let MY = null, myErr = '', EDIT = +store.get('klsd.edit', 0) || 0;
+const stopEdit = () => { EDIT = 0; store.set('klsd.edit', 0); };
+const ST_USER = { new: ['Принят, ждёт подтверждения', '#4f6bff'], reserved: ['В резерве до сбора', '#b07f00'], confirmed: ['Подтверждён', '#1b8f2f'],
+  ready: ['Собран', '#0b8aa8'], done: ['Выдан', '#7a7f8c'], cancelled: ['Отменён', '#a3001a'] };
+async function loadMy(){
+  if (DEMO && !UKEY.length){ MY = { at: Date.now() / 1000, orders: [{ n: 7, st: 'new', t: Date.now() / 1000 - 3600, s: 3150, d: 'pickup', c: '', ed: true,
+    i: Object.values(ITEMS).slice(0, 3).map(x => ({ id: x.it[0], v: 0, q: 2, price: x.it[2], title: x.it[1] })) }],
+    me: { bal: 320, on: true, cfg: { ref_join: 150, ref_pct: 5, ref_cap: 15 }, ref: null, hist: [{ t: Date.now() / 1000 - 9e4, a: 150, r: 'друг Аня в клубе' }, { t: Date.now() / 1000 - 4e4, a: 170, r: 'заказ друга Аня №5' }] } }; return; }
+  if (!UKEY.length){ myErr = 'Профиль откроется, когда бот обновит твою кнопку «🛒 Магазин» — отправь ему /start'; return; }
+  try {
+    const r = await fetch('u/' + UKEY[0] + '.enc?' + Date.now(), { cache: 'no-store' });
+    MY = r.status === 404 ? { at: 0, orders: [] } : await unsealOrders(UKEY[1], await r.text()); myErr = '';
+  } catch (e){ myErr = 'Не получилось загрузить заказы: ' + e.message; }
+  meDot(); if (topKind() === 'me') refreshSheets();
+}
+function cycleStart(now = new Date()){
+  const cs = [-1, 0, 1].flatMap(k => orderCycles(now.getFullYear(), now.getMonth() + k));
+  const c = cs.find(c => now >= c.start && now < c.close); return c ? c.start : null;
+}
+function activeOrder(){   // в один сбор (пт–пн) — один заказ; вне сбора можно копить резервы
+  const st = cycleStart(); if (!st) return null;
+  const o = (MY && MY.orders || []).find(o => ['new', 'reserved'].includes(o.st) || (o.t * 1000 >= +st && o.st !== 'cancelled'));
+  if (o) return o;
+  const sent = store.get('klsd.sent', null);   // только что отправленный, а профиль на сайте ещё не обновился
+  if (sent && !sent.edit && sent.at >= +st && (!MY || MY.at * 1000 < sent.at)) return { n: '…' };
+  return null;
+}
+function meDot(){ const b = $('#meDot'); if (b) b.hidden = !(MY && MY.orders.some(o => o.ed)); }
+function meView(el){
+  const head = `<div class="shead">${backSvg}<div class="ttl">Профиль</div></div>`;
+  if (myErr) return `<div class="inner pad">${head}<div class="empty small">${esc(myErr)}</div><button class="more" data-me="reload">Ещё раз</button></div>`;
+  if (!MY) return `<div class="inner pad">${head}<div class="empty small">загружаю…</div></div>`;
+  const sent = store.get('klsd.sent', null), fresh = sent && MY.at * 1000 < sent.at && Date.now() - sent.at < 15 * 60e3;
+  const cur = MY.orders.filter(o => !['done', 'cancelled'].includes(o.st)), old = MY.orders.filter(o => ['done', 'cancelled'].includes(o.st));
+  const card = (o, full) => { const [t, c] = ST_USER[o.st] || [o.st, '#888'];
+    return `<div class="myord"><div class="myh"><b>Заказ №${o.n}${o.ind ? ' ⚡' : ''}</b><span class="ost2" style="--c:${c}">${t}</span></div>
+      <div class="mym">${new Date(o.t * 1000).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} · ${o.d === 'courier' ? 'доставка' : 'самовывоз'}</div>
+      ${full ? `<div class="myi">${o.i.map(i => `<div><span>${esc(i.title)}</span><span>× ${i.q}</span><b>${rub(i.price * i.q)}</b></div>`).join('')}</div>
+      ${o.c ? `<div class="mym">💬 ${esc(o.c)}</div>` : ''}` : ''}
+      <div class="mytot"><span>Итого</span><b>${rub(o.s)}</b></div>
+      ${o.co ? `<div class="mytot sub"><span>Монетками −${o.co} 🪙 · к оплате</span><b>${rub(o.s - o.co)}</b></div>` : ''}
+      ${full && o.ed ? `<div class="mybtns"><button data-me="edit" data-n="${o.n}">Редактировать</button>
+        <button class="${el._cancel === o.n ? 'armed' : ''}" data-me="cancel" data-n="${o.n}">${el._cancel === o.n ? 'Точно отменить?' : 'Отменить'}</button></div>` :
+        full && !o.ed ? `<div class="mym">Заказ уже в работе — если нужно что-то поменять, напиши продавцу.</div>` : ''}</div>`; };
+  return `<div class="inner pad">${head}
+    ${fresh ? `<div class="prenote"><div><b>Заказ отправлен</b><span>Здесь он появится через минуту-две — бот уже прислал подтверждение в чат.</span></div></div>` : ''}
+    <div class="lbl">Текущий заказ</div>
+    ${cur.length ? cur.map(o => card(o, true)).join('') : `<div class="empty small">активных заказов нет</div>`}
+    ${old.length ? `<div class="lbl">История</div>${old.slice(0, 15).map(o => card(o, false)).join('')}` : ''}
+    ${refBlock(el)}
+  </div>`;
+}
+function refBlock(el){
+  const me = MY.me || {}, cfg = me.cfg || { ref_join: 150, ref_pct: 5, ref_cap: 15 }, r = me.ref;
+  const bal = `<div class="coins"><span>Баланс</span><b>${me.bal || 0} 🪙</b><small>1 🪙 = 1 ₽ · можно оплатить до ${cfg.ref_cap}% заказа</small></div>`;
+  const hist = (me.hist || []).length ? `<div class="lbl">История монеток</div><div class="myi hist">${me.hist.slice(0, 12).map(h =>
+    `<div><span>${esc(h.r)}</span><span>${new Date(h.t * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span><b class="${h.a > 0 ? 'plus' : ''}">${h.a > 0 ? '+' : ''}${h.a}</b></div>`).join('')}</div>` : '';
+  if (!r) return `<div class="lbl">Рефералка</div>
+    <div class="refhello"><div class="rh1">Клубная рефералка</div>
+      <p>Получи личную ссылку и визитку КЛСД. Покажи тем, кому реально надо 😉</p>
+      <ul><li>+${cfg.ref_join} 🪙 за друга, когда его пустят в клуб</li><li>${cfg.ref_pct}% с каждого его заказа</li><li>1 🪙 = 1 ₽ — монетками можно оплатить до ${cfg.ref_cap}% заказа</li></ul>
+      ${me.on === false ? `<div class="mym">Скоро включим — продавец настраивает 🔧</div>` :
+        `<button class="refgo" data-me="refnew">Создать рефералку</button>`}</div>
+    ${me.bal ? bal : ''}${hist}`;
+  const q = el._pq || 10;
+  return `<div class="lbl">Рефералка №${r.n}</div>
+    <div class="flip" data-me="flip"><div class="flipin${el._flip ? ' flipped' : ''}">
+      <img class="cardfr" src="card_front.jpg" alt="Визитка КЛСД — лицо"><img class="cardbk" src="${me.card || ''}" alt="Визитка КЛСД — оборот с твоим QR"></div></div>
+    <div class="mym center">нажми на визитку, чтобы перевернуть</div>
+    <div class="reflink"><code>${esc(r.link)}</code><button data-me="copy">Копировать</button></div>
+    <div class="refstats"><div><b>${r.joined}</b><span>перешли</span></div><div><b>${r.approved}</b><span>в клубе</span></div><div><b>${r.ordered}</b><span>заказали</span></div><div><b>${r.earned}</b><span>заработано 🪙</span></div></div>
+    ${bal}
+    ${(r.friends || []).length ? `<div class="lbl">Друзья</div><div class="myi">${r.friends.map(f => `<div><span>${esc(f.name)}${f.un ? ' @' + esc(f.un) : ''}</span><span>${f.ok ? 'в клубе' : 'ждёт'}</span><b>${f.ord ? '🛒' : ''}</b></div>`).join('')}</div>` : ''}
+    <div class="lbl">Бумажные визитки</div>
+    <div class="printrow"><div class="step"><button data-me="pq" data-d="-5" aria-label="Меньше">−</button><span>${q} шт</span><button data-me="pq" data-d="5" aria-label="Больше">+</button></div>
+      <button class="refgo" data-me="print">Заказать бесплатно</button></div>
+    ${hist}`;
+}
+function meEvent(e, el){
+  const b = e.target.closest('[data-me]'); if (!b) return false;
+  const a = b.dataset.me, n = +b.dataset.n, o = MY && MY.orders.find(x => x.n === n);
+  if (a === 'reload'){ MY = null; myErr = ''; drawSheet(el); loadMy(); return true; }
+  if (a === 'flip'){ el._flip = !el._flip; el.querySelector('.flipin').classList.toggle('flipped', el._flip); hap(); return true; }
+  if (a === 'copy'){ const t = (MY.me && MY.me.ref || {}).link || ''; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Ссылка скопирована'), () => toast(t)); return true; }
+  if (a === 'pq'){ el._pq = Math.max(5, Math.min(200, (el._pq || 10) + +b.dataset.d)); drawSheet(el); return true; }
+  if (a === 'refnew' || a === 'print'){
+    const p = a === 'refnew' ? { ref: 'create' } : { ref: 'print', qty: el._pq || 10 };
+    if (CAN_SEND){ hap('medium'); TG.sendData(JSON.stringify(p)); return true; }
+    if (!DEMO){ toast(OPEN_HINT); return true; }
+    toast(a === 'refnew' ? 'Демо: бот создал бы ссылку и визитку' : `Демо: заявка на ${p.qty} визиток`); return true; }
+  if (a === 'edit' && o){   // товары заказа — обратно в корзину; после отправки бот заменит заявку
+    cart = {}; for (const i of o.i) if (ITEMS[i.id]) cart[i.id + '|' + i.v] = i.q;
+    store.set('klsd.cart', cart); EDIT = n; store.set('klsd.edit', n); if (o.co){ useCoins = true; store.set('klsd.usecoins', true); }
+    if (o.d) { delivery = o.d; store.set('klsd.delivery', delivery); } store.set('klsd.comment', o.c || '');
+    const lost = o.i.filter(i => !ITEMS[i.id]).length; if (lost) toast(`${plural(lost, 'позиции', 'позиций', 'позиций')} уже нет в наличии`);
+    hap(); closeSheet(); openSheet('cart'); return true; }
+  if (a === 'cancel' && o){
+    if (el._cancel !== n){ el._cancel = n; drawSheet(el); return true; }
+    if (CAN_SEND){ hap('medium'); store.set('klsd.sent', null); TG.sendData(JSON.stringify({ cancel: n })); return true; }
+    if (!DEMO){ toast(OPEN_HINT); return true; }
+    o.st = 'cancelled'; o.ed = false; el._cancel = 0; drawSheet(el); toast('Заказ отменён (демо)'); return true; }
+  return false;
 }
 function doneView(o){
   return `<div class="inner pad"><div class="done">
@@ -978,24 +1176,28 @@ function doneView(o){
 document.addEventListener('click', e => { if (e.target.id === 'again'){ while (stack.length) closeSheet(); window.scrollTo({ top: 0 }); } });
 
 function topKind(){ return stack.length ? stack[stack.length - 1].dataset.kind : null; }
+function syncFback(){ const k = topKind(); $('#fback').hidden = !k || k === 'admin' || k === 'aline';   // в админке внизу своя панель «Сохранить»
+  document.body.classList.toggle('barup', !$('#cartbar').hidden); }
 function renderCart(){
   const t = totals(), k = topKind();
   $('#cartDot').hidden = !t.n; $('#cartDot').textContent = t.n;
-  if (k === 'admin' || k === 'aline'){ if (TG) TG.MainButton.hide(); $('#cartbar').hidden = true; return; }
+  if (k === 'admin' || k === 'aline'){ if (TG) TG.MainButton.hide(); $('#cartbar').hidden = true; syncFback(); return; }
   let label = null, cls = '';
   const short = Math.max(0, MIN_ORDER - t.s);
-  if (k === 'cart') label = !t.n ? null : short ? `<span>Ещё ${rub(short)} до заказа</span><span>${rub(t.s)}</span>` : `<span>Оформить заказ</span><span>${rub(t.s)}</span>`;
-  const hint = short ? 'маловато, ещё накинь' : t.s >= 10000 ? 'ооо рич бомбоклат' : 'уверен что хватит до следующего заказа?';
+  const go = EDIT ? 'Сохранить изменения' : (!short && indReady()) ? 'Заказать сразу' : 'Оформить заказ';
+  if (k === 'cart') label = !t.n ? null : short ? `<span>Ещё ${rub(short)} до заказа</span><span>${rub(t.s)}</span>` : `<span>${go}</span><span>${rub(t.s)}</span>`;
+  const ind = !short && indReady();
+  const hint = short ? 'маловато, ещё накинь' : ind ? 'ого это можно прям сразу заказать' : t.s >= 10000 ? 'ооо рич бомбоклат' : 'уверен что хватит до следующего заказа?';
   if (k !== 'cart' && k !== 'done' && t.n) label = `<span>Корзина · ${t.n}</span><span class="hint">${hint}</span><span>${rub(t.s)}</span>`;
   if (TG){
-    if (label){ TG.MainButton.setText(k === 'cart' ? (short ? `Ещё ${rub(short)} до минимального заказа` : `Оформить заказ · ${rub(t.s)}`) : `${hint} · ${rub(t.s)}`);
+    if (label){ TG.MainButton.setText(k === 'cart' ? (short ? `Ещё ${rub(short)} до минимального заказа` : `${go} · ${rub(t.s)}`) : `${hint} · ${rub(t.s)}`);
       if (k === 'cart' && short) TG.MainButton.disable(); else TG.MainButton.enable();
       try { TG.MainButton.setParams({ color: short ? '#E8512F' : '#2E9E6A', text_color: '#FFFFFF' }); } catch(e){}
       TG.MainButton.show(); }
     else TG.MainButton.hide();
-    $('#cartbar').hidden = true; return;
+    $('#cartbar').hidden = true; syncFback(); return;
   }
-  $('#cartbar').hidden = !label; if (label) $('#cta').innerHTML = label;
+  $('#cartbar').hidden = !label; if (label) $('#cta').innerHTML = label; syncFback();
   $('#cta').disabled = k === 'cart' && short > 0;
   $('#cta').classList.toggle('short', short > 0); $('#cta').classList.toggle('enough', !short);
   document.querySelectorAll('.card').forEach(c => { const l = LINES[c.dataset.line]; if (!l) return;
@@ -1007,7 +1209,9 @@ function onCta(){
   openSheet('cart');
 }
 $('#cta').addEventListener('click', onCta);
+$('#fback').addEventListener('click', () => { hap(); closeSheet(); });
 $('#cartBtn').addEventListener('click', () => { if (topKind() !== 'cart') openSheet('cart'); });
+$('#meBtn').addEventListener('click', () => { if (topKind() !== 'me') { openSheet('me'); loadMy(); } });
 
 function checkout(){
   const rows = cartLines(); if (!rows.length) return;
@@ -1015,10 +1219,19 @@ function checkout(){
   if (t.s < MIN_ORDER) return;
   // компактно, чтобы влезть в лимит Telegram sendData (4096 байт): [id, вариант, кол-во]
   const payload = { v: C.v, i: rows.map(c => [c.it[0], c.v, c.q]), d: delivery, c: (store.get('klsd.comment', '') || '').slice(0, 300) };
+  if (indReady()) payload.ind = 1;   // бот сам проверит, тянет ли это на отдельную закупку
+  if (EDIT) payload.edit = EDIT;
+  if (useCoins){ const c = coinsMax(t.s); if (c.max) payload.coins = c.max; }
+  else { const act = activeOrder(); if (act){ toast(`У тебя уже есть активный заказ №${act.n} — перейди в профиль`); hap('error');
+    if (topKind() !== 'me') openSheet('me'); return; } }
   const json = JSON.stringify(payload);
-  if (CAN_SEND){ hap('medium'); TG.sendData(json); return; }   // Telegram закроет приложение, заказ придёт боту
+  if (CAN_SEND){ hap('medium');
+    // корзина пустеет, отправленное лежит в профиле (и на всякий случай — «вернуть прошлый набор»)
+    store.set('klsd.sentcart', { at: Date.now(), cart }); store.set('klsd.sent', { at: Date.now(), edit: EDIT || 0, s: t.s, n: t.n });
+    cart = {}; store.set('klsd.cart', cart); store.set('klsd.comment', ''); stopEdit();
+    TG.sendData(json); return; }   // Telegram закроет приложение, заказ придёт боту
   if (!DEMO){ toast(OPEN_HINT); return; }                       // корзина не теряется
-  cart = {}; store.set('klsd.cart', cart); store.set('klsd.comment', '');
+  cart = {}; store.set('klsd.cart', cart); store.set('klsd.comment', ''); stopEdit();
   while (stack.length) { stack.pop().remove(); }
   openSheet('done', '', { _order: { n: t.n, s: t.s, json } });
 }
@@ -1097,7 +1310,7 @@ const DEMO = !TG && (location.protocol === 'file:' || /claude|localhost|127\.0\.
 const IS_ADMIN = !!ADMKEY || DEMO;
 let PEND = store.get('klsd.pend', null) || { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [] };
 const pendCount = () => Object.keys(PEND.price).length + Object.keys(PEND.hide).length + Object.keys(PEND.banners).length
-  + (PEND.min_order ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length;
+  + (PEND.min_order ? 1 : 0) + Object.keys(PEND.ind || {}).length + (PEND.coin || []).length + (PEND.card ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length;
 const savePend = () => store.set('klsd.pend', PEND);
 const ADM_STATUS = { reserved: ['📌 Резерв', '#b07f00'], new: ['🆕 Новый', '#4f6bff'], confirmed: ['✅ Подтверждён', '#1b8f2f'],
   ready: ['📦 Собран', '#0b8aa8'], done: ['🤝 Выдан', '#7a7f8c'], cancelled: ['❌ Отменён', '#a3001a'] };
@@ -1125,8 +1338,9 @@ function adminView(el){
     <div class="admtabs" role="tablist">
       <button role="tab" data-atab="shop" aria-selected="${tab === 'shop'}">Магазин</button>
       <button role="tab" data-atab="orders" aria-selected="${tab === 'orders'}">Заказы</button>
+      <button role="tab" data-atab="refs" aria-selected="${tab === 'refs'}">Рефералка</button>
     </div>
-    ${tab === 'shop' ? admShopView(el) : admOrdersView(el)}
+    ${tab === 'shop' ? admShopView(el) : tab === 'refs' ? admRefsView(el) : admOrdersView(el)}
     ${admSaveBar()}
   </div>`;
 }
@@ -1139,6 +1353,11 @@ function admShopView(el){
   return `
     <div class="admsec"><h3>Общее</h3>
       <label class="admrow"><span>Минимальный заказ, ₽</span><input type="number" inputmode="numeric" data-adm="min" value="${PEND.min_order || MIN_ORDER}"></label>
+    </div>
+    <div class="admsec"><h3>Индивидуальный заказ</h3>
+      <div class="admhint">Вне сбора: если у каждого поставщика из корзины набрана его минималка, кнопка предлагает «заказать сразу». Бот считает твою прибыль по наценкам: нужно не меньше порога + доставка за каждого поставщика.</div>
+      ${[['ind_min1', 'Минималка NastyLab, ₽'], ['ind_min2', 'Минималка Шишки, ₽'], ['ind_profit', 'Прибыль не меньше, ₽'], ['ind_ship', 'Доставка СДЭК за поставщика, ₽']].map(([k, t]) =>
+        `<label class="admrow"><span>${t}</span><input type="number" inputmode="numeric" data-adm="ind" data-t="${k}" value="${(PEND.ind || {})[k] || indCfg(k)}"></label>`).join('')}
     </div>
     <div class="admsec"><h3>Баннеры</h3>
       ${BANNER_FIELDS.map(b => { const off = bset(b.n, 'off', false);
@@ -1217,6 +1436,31 @@ async function loadOrders(el){
   } catch (e) { ordErr = 'Не получилось загрузить заказы: ' + e.message; }
   ordLoading = false; if (el.isConnected) drawSheet(el);
 }
+function admRefsView(el){
+  if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю…</div>'; }
+  if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
+  const refs = (ORD.refs || []).slice().sort((a, b) => (b.joined - a.joined) || (b.bal - a.bal));
+  const pend = uid => (PEND.coin || []).filter(c => c[0] === uid).reduce((a, c) => a + c[1], 0);
+  const cfg = `<div class="admsec"><h3>Настройки</h3>
+    ${[['ref_join', 'За одобренного друга, 🪙'], ['ref_pct', 'С заказа друга, %'], ['ref_cap', 'Оплатить монетками до, % заказа']].map(([k, t]) =>
+      `<label class="admrow"><span>${t}</span><input type="number" inputmode="numeric" data-adm="ind" data-t="${k}" value="${(PEND.ind || {})[k] || indCfg(k)}"></label>`).join('')}</div>`;
+  return `${ORD.chat === false ? `<div class="prenote"><div><b>Чат не подключён</b><span>Добавь бота админом в чат КЛСД с правом «Пригласительные ссылки» и напиши там /setchat.</span></div></div>` : ''}
+    <div class="admhint">Всего с рефералкой: ${refs.filter(r => r.n).length} · привели: ${refs.reduce((a, r) => a + r.joined, 0)} · монеток на руках: ${refs.reduce((a, r) => a + r.bal, 0)} 🪙</div>
+    ${refs.map(r => { const open = (el._ropen || {})[r.uid], p = pend(r.uid);
+      return `<div class="ord"><button class="ordh" data-rref="${r.uid}"><b>${esc(r.name || String(r.uid))}${r.un ? ' <small>@' + esc(r.un) + '</small>' : ''}</b>
+        <span class="ost2" style="--c:#4f6bff">${r.n ? 'реф №' + r.n : 'без рефералки'}</span>
+        <span class="osum">${r.bal}${p ? (p > 0 ? ' +' : ' ') + p : ''} 🪙</span></button>
+      ${open ? `<div class="obody">
+        <div class="refstats"><div><b>${r.joined}</b><span>перешли</span></div><div><b>${r.approved}</b><span>в клубе</span></div><div><b>${r.ordered}</b><span>заказали</span></div><div><b>${r.earned}</b><span>заработал</span></div></div>
+        ${r.link ? `<div class="reflink"><code>${esc(r.link)}</code></div>` : ''}
+        ${(r.friends || []).length ? `<div class="myi">${r.friends.map(f => `<div><span>${esc(f.name)}${f.un ? ' @' + esc(f.un) : ''}</span><span>${f.ok ? 'в клубе' : 'ждёт'}</span><b>${f.ord ? '🛒' : ''}</b></div>`).join('')}</div>` : ''}
+        ${(r.hist || []).length ? `<div class="myi hist">${r.hist.map(h => `<div><span>${esc(h.r)}</span><span>${new Date(h.t * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span><b class="${h.a > 0 ? 'plus' : ''}">${h.a > 0 ? '+' : ''}${h.a}</b></div>`).join('')}</div>` : ''}
+        <div class="coinform"><input type="number" inputmode="numeric" placeholder="монеток (+/−)" data-cn="${r.uid}"><input type="text" placeholder="за что" data-cw="${r.uid}">
+          <button data-coinadd="${r.uid}">Начислить</button></div>
+        ${r.n ? `<button class="more" data-rcard="${r.uid}">${PEND.card === r.uid ? '✓ визитка придёт в чат после «Сохранить»' : 'Скачать визитку для печати'}</button>` : ''}
+      </div>` : ''}</div>`; }).join('') || '<div class="empty small">Пока никто не создал рефералку</div>'}
+    ${cfg}`;
+}
 function admOrdersView(el){
   if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю заказы…</div>'; }
   if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
@@ -1234,7 +1478,7 @@ function admOrdersView(el){
     ${list.map(o => { const s0 = st(o), pend = s0 !== o.st, open = (el._oopen || {})[o.n];
       const cnt = o.i.reduce((a, i) => a + i.q, 0), who = o.u[2] ? '@' + o.u[2] : 'id ' + o.u[0];
       return `<div class="ord ${open ? 'open' : ''}">
-        <button class="ordh" data-ord="${o.n}"><b>№${o.n}</b><span class="ost2" style="--c:${ADM_STATUS[s0][1]}">${ADM_STATUS[s0][0]}${pend ? ' · не сохранено' : ''}</span>
+        <button class="ordh" data-ord="${o.n}"><b>№${o.n}${o.ind ? ' ⚡' : ''}</b><span class="ost2" style="--c:${ADM_STATUS[s0][1]}">${ADM_STATUS[s0][0]}${pend ? ' · не сохранено' : ''}</span>
           <span class="ordw">${esc(o.u[1] || '')} <small>${esc(who)}</small></span><span class="ordm">${when(o.t)} · ${plural(cnt, 'товар', 'товара', 'товаров')} · ${o.d === 'courier' ? 'доставка' : 'самовывоз'}</span>
           <span class="ords">${rub(o.s)}</span></button>
         ${open ? `<div class="ordb">${o.i.map(i => `<div class="ordi"><span>${esc(i.title)}</span><span>× ${i.q}</span><span>${rub(i.price * i.q)}</span></div>`).join('')}
@@ -1252,6 +1496,12 @@ function admEvent(e, el){
   const tab = t.closest('[data-atab]'); if (tab){ el._tab = tab.dataset.atab; drawSheet(el); return true; }
   const al = t.closest('[data-aline]'); if (al){ openSheet('aline', al.dataset.aline); return true; }
   const of = t.closest('[data-ofil]'); if (of){ el._of = of.dataset.ofil; drawSheet(el); return true; }
+  const rr = t.closest('[data-rref]'); if (rr){ el._ropen = el._ropen || {}; el._ropen[rr.dataset.rref] = !el._ropen[rr.dataset.rref]; drawSheet(el); return true; }
+  const ca = t.closest('[data-coinadd]'); if (ca){ const u = +ca.dataset.coinadd, box = ca.parentNode;
+    const v = parseInt(box.querySelector('[data-cn]').value, 10), why = box.querySelector('[data-cw]').value.trim();
+    if (!v){ toast('Впиши, сколько монеток'); return true; }
+    PEND.coin = (PEND.coin || []).concat([[u, v, why || 'от продавца']]); savePend(); hap(); refreshSheets(); admDot(); toast('Начислится после «Сохранить»'); return true; }
+  const rc = t.closest('[data-rcard]'); if (rc){ PEND.card = PEND.card === +rc.dataset.rcard ? 0 : +rc.dataset.rcard; savePend(); hap(); refreshSheets(); admDot(); return true; }
   const oh = t.closest('[data-ord]'); if (oh){ el._oopen = el._oopen || {}; el._oopen[oh.dataset.ord] = !el._oopen[oh.dataset.ord]; drawSheet(el); return true; }
   const os = t.closest('[data-ost]'); if (os){ const [n, st] = os.dataset.ost.split(':'); PEND.st = PEND.st.filter(x => x[0] !== +n);
     if (st) PEND.st.push([+n, st]); savePend(); hap(); refreshSheets(); admDot(); return true; }
@@ -1271,6 +1521,8 @@ function admInput(e){
   const kind = a.dataset.adm, tg = a.dataset.t;
   if (kind === 'aq'){ return false; }
   if (kind === 'min'){ const v = parseInt(a.value, 10); if (v && v !== MIN_ORDER) PEND.min_order = v; else delete PEND.min_order; }
+  else if (kind === 'ind'){ const v = parseInt(a.value, 10); PEND.ind = PEND.ind || {};
+    if (v > 0 && v !== indCfg(tg)) PEND.ind[tg] = v; else delete PEND.ind[tg]; }
   else if (kind === 'price'){ const v = parseInt(a.value, 10), cur = (S.price || {})[tg];
     if ((v || null) === (cur || null)) delete PEND.price[tg]; else PEND.price[tg] = v || null; }
   else if (kind === 'hide'){ const cur = !!(S.hide || {})[tg]; if (a.checked === cur) delete PEND.hide[tg]; else PEND.hide[tg] = a.checked; }
@@ -1292,6 +1544,9 @@ function admPayload(){
   if (Object.keys(PEND.hide).length) p.hide = PEND.hide;
   if (Object.keys(PEND.banners).length) p.banners = PEND.banners;
   if (PEND.min_order) p.min_order = PEND.min_order;
+  if (Object.keys(PEND.ind || {}).length) p.ind = PEND.ind;
+  if ((PEND.coin || []).length) p.coin = PEND.coin;
+  if (PEND.card) p.card = PEND.card;
   if (PEND.nophoto.length) p.nophoto = PEND.nophoto;
   if (PEND.photo.length) p.photo = PEND.photo;
   if (PEND.st.length) p.st = PEND.st;
@@ -1308,6 +1563,7 @@ function admSave(){
   for (const [k, v] of Object.entries(p.hide || {})){ S.hide = S.hide || {}; if (v) S.hide[k] = 1; else delete S.hide[k]; }
   for (const [n, b] of Object.entries(p.banners || {})){ S.banners = S.banners || {}; S.banners[n] = Object.assign(S.banners[n] || {}, b); }
   if (p.min_order) S.min_order = p.min_order;
+  Object.assign(S, p.ind || {});
   for (const t of p.nophoto || []) delete (S[t.startsWith('L:') ? 'lphoto' : 'iphoto'] || {})[t.replace(/^L:/, '')];
   if (ORD) for (const [n, st] of p.st || []){ const o = ORD.orders.find(x => x.n === n); if (o) o.st = st; }
   const photos = p.photo ? p.photo.length : 0;
