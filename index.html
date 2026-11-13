@@ -319,6 +319,20 @@ img{pointer-events:none}   /* долгое нажатие на картинку 
 .myi div{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:baseline}
 .myi span:nth-child(2){color:var(--muted)}
 .mytot{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.paychip{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--line);color:var(--muted);margin-top:8px}
+.paychip.ok{background:rgba(27,143,47,.16);color:#1b8f2f}
+.track{list-style:none;margin:12px 0 2px;padding:0;display:grid;gap:0}
+.track li{position:relative;padding:0 0 12px 26px;font-size:14px;color:var(--muted)}
+.track li:last-child{padding-bottom:0}
+.track li::before{content:"";position:absolute;left:4px;top:3px;width:12px;height:12px;border-radius:50%;border:2px solid var(--line);background:var(--surface);box-sizing:border-box}
+.track li::after{content:"";position:absolute;left:9px;top:17px;bottom:-1px;width:2px;background:var(--line)}
+.track li:last-child::after{display:none}
+.track li.on{color:var(--ink);font-weight:600}
+.track li.on::before{background:#1b8f2f;border-color:#1b8f2f}
+.track li.on::after{background:#1b8f2f}
+.track li.now::before{box-shadow:0 0 0 4px rgba(27,143,47,.22)}
+.ordbatch{grid-column:2/4;font-size:12px;color:var(--muted)}
+.admhint.small{font-size:12px;margin-top:8px}
 .mybtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .mybtns button{min-height:44px;border-radius:12px;font-weight:700;background:var(--line);color:var(--ink)}
 .mybtns button:first-child{background:var(--accent);color:var(--accent-ink,#fff)}
@@ -953,7 +967,9 @@ function openSheet(kind, arg, extra){
     if (kind === 'me' && meEvent(e, el)) return;
     if (e.target.closest('[data-unedit]')){ stopEdit(); drawSheet(el); renderCart(); return; }
     const cc = e.target.closest('[data-coins]'); if (cc){ useCoins = cc.checked; store.set('klsd.usecoins', useCoins); hap(); drawSheet(el); renderCart(); return; }
-    if (e.target.closest('[data-restore]')){ const sc = store.get('klsd.sentcart', null); if (sc){ cart = sc.cart || {}; store.set('klsd.cart', cart); hap(); refreshSheets(); renderCart(); } return; }
+    if (e.target.closest('[data-restore]')){ const sc = store.get('klsd.sentcart', null); if (sc){ cart = sc.cart || {}; store.set('klsd.cart', cart);
+      const act = activeOrder(); if (act && act.ed){ EDIT = act.n; store.set('klsd.edit', act.n); useCoins = !!act.co; store.set('klsd.usecoins', useCoins); }
+      hap(); refreshSheets(); renderCart(); } return; }
   });
   el.addEventListener('input', e => { if (e.target.id === 'aq'){ el._aq = e.target.value; const pos = e.target.selectionStart; drawSheet(el); const i = el.querySelector('#aq'); i.focus(); i.setSelectionRange(pos, pos); return; }
                                       if ((kind === 'admin' || kind === 'aline') && admInput(e)) return;
@@ -1049,7 +1065,7 @@ function cartView(){
     <div class="shead">${backSvg}<div class="ttl">Корзина · ${plural(t.n, 'товар', 'товара', 'товаров')}</div>
       <button class="clearcart${clearArm ? ' armed' : ''}" data-clear>${clearArm ? 'Точно очистить?' : 'Очистить'}</button></div>
     <div class="prenote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>
-      <div><b>Это предзаказ</b><span>${(() => { const ph = orderPhase(); return ph.cls === 'r' ? 'После оформления продавец подтвердит наличие и сроки в чате. Оплата обсуждается при подтверждении.' : 'Сейчас приём заявок закрыт — заказ зарезервируем, а когда начнётся сбор (' + ph.sub.replace(/^старт /, '') + '), проверим наличие по свежему прайсу и напишем в чат.'; })()}</span></div></div>
+      <div><b>Это предзаказ</b><span>${(() => { const ph = orderPhase(); return ph.cls === 'r' ? 'После оформления продавец подтвердит наличие — статус заказа и оплата видны в профиле 👤.' : 'Сейчас приём заявок закрыт — заказ зарезервируем, а когда начнётся сбор (' + ph.sub.replace(/^старт /, '') + '), проверим наличие по свежему прайсу. Статус — в профиле 👤.'; })()}</span></div></div>
     ${[1, 2].map(wh => { const rs = rows.filter(c => srcOf(c.it, c.l) === wh); if (!rs.length) return '';
       const n = rs.reduce((a, c) => a + c.q, 0), sum = rs.reduce((a, c) => a + c.q * c.it[2], 0);
       return `<div class="whcart"><b>${WH[wh]}</b><span>${plural(n, 'товар', 'товара', 'товаров')} · ${rub(sum)}</span></div>
@@ -1077,9 +1093,18 @@ const UKEY = (location.hash.match(/u=([0-9a-f]{16})\.([0-9a-f]{64})/) || []).sli
 let MY = null, myErr = '', EDIT = +store.get('klsd.edit', 0) || 0;
 const stopEdit = () => { EDIT = 0; store.set('klsd.edit', 0); };
 const ST_USER = { new: ['Принят, ждёт подтверждения', '#4f6bff'], reserved: ['В резерве до сбора', '#b07f00'], confirmed: ['Подтверждён', '#1b8f2f'],
-  ready: ['Собран', '#0b8aa8'], done: ['Выдан', '#7a7f8c'], cancelled: ['Отменён', '#a3001a'] };
+  supplier: ['На сборке у поставщика', '#7a4fff'], transit: ['В пути', '#0b8aa8'], sorting: ['На сортировке', '#0b8aa8'],
+  ready: ['Готов к получению', '#1b8f2f'], done: ['Выдан', '#7a7f8c'], cancelled: ['Отменён', '#a3001a'] };
+const FLOW = ['reserved', 'new', 'confirmed', 'supplier', 'transit', 'sorting', 'ready', 'done'];
+const TRACK_STEPS = [['supplier', 'На сборке у поставщика'], ['transit', 'В пути'], ['sorting', 'На сортировке'], ['ready', 'Готов к получению']];
+function trackHtml(o){   // отслеживание: оплата + этапы доставки
+  if (o.st === 'cancelled' || o.st === 'reserved') return '';
+  const at = FLOW.indexOf(o.st), cur = TRACK_STEPS.findIndex(([k]) => k === o.st);
+  return `<ol class="track"><li class="${o.pd ? 'on' : ''}">${o.pd ? 'Оплачен' : 'Не оплачен'}</li>
+    ${TRACK_STEPS.map(([k, t], i) => `<li class="${at >= FLOW.indexOf(k) ? 'on' : ''}${i === cur ? ' now' : ''}">${t}</li>`).join('')}</ol>`;
+}
 async function loadMy(){
-  if (DEMO && !UKEY.length){ MY = { at: Date.now() / 1000, orders: [{ n: 7, st: 'new', t: Date.now() / 1000 - 3600, s: 3150, d: 'pickup', c: '', ed: true,
+  if (DEMO && !UKEY.length){ MY = { at: Date.now() / 1000, orders: [{ n: 7, st: 'transit', pd: 1, t: Date.now() / 1000 - 3600, s: 3150, d: 'pickup', c: '', ed: false,
     i: Object.values(ITEMS).slice(0, 3).map(x => ({ id: x.it[0], v: 0, q: 2, price: x.it[2], title: x.it[1] })) }],
     me: { bal: 320, on: true, cfg: { ref_join: 150, ref_pct: 5, ref_cap: 15 }, ref: null, hist: [{ t: Date.now() / 1000 - 9e4, a: 150, r: 'друг Аня в клубе' }, { t: Date.now() / 1000 - 4e4, a: 170, r: 'заказ друга Аня №5' }] } }; return; }
   if (!UKEY.length){ myErr = 'Профиль откроется, когда бот обновит твою кнопку «🛒 Магазин» — отправь ему /start'; return; }
@@ -1087,18 +1112,18 @@ async function loadMy(){
     const r = await fetch('u/' + UKEY[0] + '.enc?' + Date.now(), { cache: 'no-store' });
     MY = r.status === 404 ? { at: 0, orders: [] } : await unsealOrders(UKEY[1], await r.text()); myErr = '';
   } catch (e){ myErr = 'Не получилось загрузить заказы: ' + e.message; }
-  meDot(); if (topKind() === 'me') refreshSheets();
+  meDot(); if (['me', 'cart'].includes(topKind())) refreshSheets();   // баланс монеток виден и в корзине
 }
 function cycleStart(now = new Date()){
   const cs = [-1, 0, 1].flatMap(k => orderCycles(now.getFullYear(), now.getMonth() + k));
   const c = cs.find(c => now >= c.start && now < c.close); return c ? c.start : null;
 }
-function activeOrder(){   // в один сбор (пт–пн) — один заказ; вне сбора можно копить резервы
-  const st = cycleStart(); if (!st) return null;
-  const o = (MY && MY.orders || []).find(o => ['new', 'reserved'].includes(o.st) || (o.t * 1000 >= +st && o.st !== 'cancelled'));
+function activeOrder(){   // один открытый заказ (новый/резерв) за раз; в один сбор (пт–пн) — вообще один заказ
+  const st = cycleStart();
+  const o = (MY && MY.orders || []).find(o => ['new', 'reserved', 'confirmed'].includes(o.st) || (st && o.t * 1000 >= +st && o.st !== 'cancelled'));
   if (o) return o;
   const sent = store.get('klsd.sent', null);   // только что отправленный, а профиль на сайте ещё не обновился
-  if (sent && !sent.edit && sent.at >= +st && (!MY || MY.at * 1000 < sent.at)) return { n: '…' };
+  if (sent && !sent.edit && (!MY || MY.at * 1000 < sent.at) && (st ? sent.at >= +st : Date.now() - sent.at < 15 * 60e3)) return { n: '…' };
   return null;
 }
 function meDot(){ const b = $('#meDot'); if (b) b.hidden = !(MY && MY.orders.some(o => o.ed)); }
@@ -1115,11 +1140,12 @@ function meView(el){
       ${o.c ? `<div class="mym">💬 ${esc(o.c)}</div>` : ''}` : ''}
       <div class="mytot"><span>Итого</span><b>${rub(o.s)}</b></div>
       ${o.co ? `<div class="mytot sub"><span>Монетками −${o.co} 🪙 · к оплате</span><b>${rub(o.s - o.co)}</b></div>` : ''}
+      ${o.st !== 'cancelled' ? (full ? trackHtml(o) : `<span class="paychip${o.pd ? ' ok' : ''}">${o.pd ? '💰 Оплачен' : 'Не оплачен'}</span>`) : ''}
       ${full && o.ed ? `<div class="mybtns"><button data-me="edit" data-n="${o.n}">Редактировать</button>
         <button class="${el._cancel === o.n ? 'armed' : ''}" data-me="cancel" data-n="${o.n}">${el._cancel === o.n ? 'Точно отменить?' : 'Отменить'}</button></div>` :
-        full && !o.ed ? `<div class="mym">Заказ уже в работе — если нужно что-то поменять, напиши продавцу.</div>` : ''}</div>`; };
+        full && !o.ed ? `<div class="mym">Заказ уже у поставщика — изменить его нельзя. Если что-то срочное, напиши продавцу.</div>` : ''}</div>`; };
   return `<div class="inner pad">${head}
-    ${fresh ? `<div class="prenote"><div><b>Заказ отправлен</b><span>Здесь он появится через минуту-две — бот уже прислал подтверждение в чат.</span></div></div>` : ''}
+    ${fresh ? `<div class="prenote"><div><b>Заказ отправлен</b><span>Здесь он появится через минуту-две. Если что-то не так (например, позиция закончилась), бот напишет в чат.</span></div></div>` : ''}
     <div class="lbl">Текущий заказ</div>
     ${cur.length ? cur.map(o => card(o, true)).join('') : `<div class="empty small">активных заказов нет</div>`}
     ${old.length ? `<div class="lbl">История</div>${old.slice(0, 15).map(o => card(o, false)).join('')}` : ''}
@@ -1234,7 +1260,7 @@ function renderCart(){
 }
 function onCta(){
   if (topKind() === 'cart') return checkout();
-  openSheet('cart');
+  openSheet('cart'); loadMy();
 }
 $('#cta').addEventListener('click', onCta);
 // запрет копирования: перетаскивание, контекстное меню, копирование и выделение — кроме полей ввода
@@ -1242,7 +1268,8 @@ $('#cta').addEventListener('click', onCta);
   for (const ev of ['dragstart', 'contextmenu', 'copy', 'cut', 'selectstart'])
     document.addEventListener(ev, e => { if (!field(e.target)) e.preventDefault(); }, { capture: true }); })();
 $('#fback').addEventListener('click', () => { hap(); closeSheet(); });
-$('#cartBtn').addEventListener('click', () => { if (topKind() !== 'cart') openSheet('cart'); });
+$('#cartBtn').addEventListener('click', () => { if (topKind() !== 'cart'){ openSheet('cart'); loadMy(); } });   // свежий баланс монеток
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadMy(); });
 $('#meBtn').addEventListener('click', () => { if (topKind() !== 'me') { openSheet('me'); loadMy(); } });
 
 function checkout(){
@@ -1252,8 +1279,8 @@ function checkout(){
   // компактно, чтобы влезть в лимит Telegram sendData (4096 байт): [id, вариант, кол-во]
   const payload = { v: C.v, i: rows.map(c => [c.it[0], c.v, c.q]), d: delivery, c: (store.get('klsd.comment', '') || '').slice(0, 300) };
   if (indReady()) payload.ind = 1;   // бот сам проверит, тянет ли это на отдельную закупку
-  if (EDIT) payload.edit = EDIT;
   if (useCoins){ const c = coinsMax(t.s); if (c.max) payload.coins = c.max; }
+  if (EDIT) payload.edit = EDIT;
   else { const act = activeOrder(); if (act){ toast(`У тебя уже есть активный заказ №${act.n} — перейди в профиль`); hap('error');
     if (topKind() !== 'me') openSheet('me'); return; } }
   const json = JSON.stringify(payload);
@@ -1340,14 +1367,16 @@ const ADMKEY = (location.hash.match(/adm=([0-9a-f]{64})/) || [])[1] || '';
 // демо-админка — только в превью (файл на компьютере / артефакт), на настоящем сайте её нет
 const DEMO = !TG && (location.protocol === 'file:' || /claude|localhost|127\.0\.0\.1/.test(location.hostname));
 const IS_ADMIN = !!ADMKEY || DEMO;
-let PEND = store.get('klsd.pend', null) || { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [] };
+let PEND = store.get('klsd.pend', null) || { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [] };
+PEND.paid = PEND.paid || [];
 const pendCount = () => Object.keys(PEND.price).length + Object.keys(PEND.hide).length + Object.keys(PEND.banners).length
-  + (PEND.min_order ? 1 : 0) + Object.keys(PEND.ind || {}).length + (PEND.coin || []).length + (PEND.card ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length;
+  + (PEND.min_order ? 1 : 0) + Object.keys(PEND.ind || {}).length + (PEND.coin || []).length + (PEND.card ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length + (PEND.paid || []).length;
 const savePend = () => store.set('klsd.pend', PEND);
 const ADM_STATUS = { reserved: ['📌 Резерв', '#b07f00'], new: ['🆕 Новый', '#4f6bff'], confirmed: ['✅ Подтверждён', '#1b8f2f'],
-  ready: ['📦 Собран', '#0b8aa8'], done: ['🤝 Выдан', '#7a7f8c'], cancelled: ['❌ Отменён', '#a3001a'] };
-const ADM_NEXT = { reserved: [['cancelled', 'Отменить']], new: [['confirmed', 'Подтвердить'], ['cancelled', 'Отменить']],
-  confirmed: [['ready', 'Собран'], ['cancelled', 'Отменить']], ready: [['done', 'Выдан'], ['cancelled', 'Отменить']], done: [], cancelled: [] };
+  supplier: ['🏭 У поставщика', '#7a4fff'], transit: ['🚚 В пути', '#0b8aa8'], sorting: ['🗂 На сортировке', '#0b8aa8'],
+  ready: ['📦 Готов к получению', '#1b8f2f'], done: ['🤝 Выдан', '#7a7f8c'], cancelled: ['❌ Отменён', '#a3001a'] };
+const ADM_BTN = { confirmed: 'Подтвердить', supplier: '🏭 У поставщика', transit: '🚚 В пути', sorting: '🗂 Сортировка', ready: '📦 Готов', done: '🤝 Выдан', cancelled: 'Отменить' };
+const admNext = st => ['done', 'cancelled'].includes(st) ? [] : st === 'reserved' ? ['cancelled'] : FLOW.slice(FLOW.indexOf(st) + 1).concat('cancelled');
 const BANNER_FIELDS = [   // что можно править в баннерах
   { n: 1, name: 'Клуб любителей сладко дунуть', f: [['slogan', 'Надпись (строки — через Enter)', 'Клуб\nлюбителей\nсладко\nдунуть']] },
   { n: 2, name: 'Первое правило', f: [['k', 'Подпись', 'Первое правило подикового клуба'], ['h', 'Заголовок', 'Никому не рассказывать о подиковом клубе']] },
@@ -1438,9 +1467,9 @@ function alineView(el){
 let ORD = null, ordErr = '', ordLoading = false;
 const DEMO_ORDERS = () => { const now = Math.floor(Date.now() / 1000), any = Object.values(ITEMS).filter(x => x.l.cat === 'salt').slice(0, 40);
   const mk = (n, st, ago, name, user, idx, d) => { const its = idx.map(([k, q]) => { const x = any[k % any.length]; return { title: split(x.it[1])[0] + ' (' + x.l.t + ')', q, price: x.it[2], src: srcOf(x.it, x.l) }; });
-    return { n, st, t: now - ago, u: [100 + n, name, user], i: its, s: its.reduce((a, i) => a + i.price * i.q, 0), d, c: n === 14 ? 'после 18, позвоню' : '' }; };
+    return { n, st, t: now - ago, u: [100 + n, name, user], i: its, s: its.reduce((a, i) => a + i.price * i.q, 0), d, c: n === 14 ? 'после 18, позвоню' : '', pd: n === 12 ? 1 : 0, b: '04.12' }; };
   return { at: now, demo: true, orders: [mk(15, 'reserved', 3600, 'Денис', 'den_vape', [[3, 2], [7, 3]], 'pickup'), mk(14, 'new', 86400, 'Аня', 'anya_k', [[1, 4], [9, 2], [12, 1]], 'courier'),
-    mk(13, 'confirmed', 2 * 86400, 'Макс', '', [[5, 6]], 'pickup'), mk(12, 'ready', 4 * 86400, 'Олег', 'oleg77', [[2, 3], [8, 2]], 'pickup'), mk(11, 'done', 9 * 86400, 'Аня', 'anya_k', [[4, 5]], 'pickup')] }; };
+    mk(13, 'confirmed', 2 * 86400, 'Макс', '', [[5, 6]], 'pickup'), mk(12, 'transit', 4 * 86400, 'Олег', 'oleg77', [[2, 3], [8, 2]], 'pickup'), mk(11, 'done', 9 * 86400, 'Аня', 'anya_k', [[4, 5]], 'pickup')] }; };
 async function unsealOrders(hexKey, b64){
   const raw = Uint8Array.from(atob(b64.trim()), c => c.charCodeAt(0)), key = new Uint8Array(hexKey.match(/../g).map(h => parseInt(h, 16)));
   const nonce = raw.slice(0, 16), tag = raw.slice(16, 32), ct = raw.slice(32);
@@ -1498,26 +1527,31 @@ function admOrdersView(el){
   if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
   const f = el._of || 'open';
   const FL = { open: ['Открытые', o => !['done', 'cancelled'].includes(o.st)], reserved: ['Резерв', o => o.st === 'reserved'],
-    new: ['Новые', o => o.st === 'new'], work: ['В работе', o => ['confirmed', 'ready'].includes(o.st)], all: ['Все', () => true] };
+    new: ['Новые', o => o.st === 'new'], work: ['В работе', o => ['confirmed', 'supplier', 'transit', 'sorting', 'ready'].includes(o.st)],
+    unpaid: ['Не оплачены', o => !o.pd && !['cancelled', 'reserved'].includes(o.st)], all: ['Все', () => true] };
   const st = o => (PEND.st.find(x => x[0] === o.n) || [])[1] || o.st;
-  const list = ORD.orders.filter(o => FL[f][1]({ ...o, st: st(o) }));
+  const pd = o => { const x = (PEND.paid || []).find(x => x[0] === o.n); return x ? x[1] : (o.pd || 0); };
+  const list = ORD.orders.filter(o => FL[f][1]({ ...o, st: st(o), pd: pd(o) }));
   const sum = list.reduce((a, o) => a + o.s, 0);
   const when = t => new Date(t * 1000).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   return `<div class="admsec">
     <div class="ordtop"><span>${ORD.demo ? 'демо-заказы для примера' : ORD.at ? 'обновлено ' + when(ORD.at) : 'заказов ещё не было'}</span><button class="pill ghost" data-adm="reload">↻ Обновить</button></div>
-    <div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) => `<button data-ofil="${k}" aria-pressed="${k === f}">${t} <small>${ORD.orders.filter(o => fn({ ...o, st: st(o) })).length}</small></button>`).join('')}</div>
+    <div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) => `<button data-ofil="${k}" aria-pressed="${k === f}">${t} <small>${ORD.orders.filter(o => fn({ ...o, st: st(o), pd: pd(o) })).length}</small></button>`).join('')}</div>
     <div class="ordsum">${plural(list.length, 'заказ', 'заказа', 'заказов')} на ${rub(sum)}</div>
-    ${list.map(o => { const s0 = st(o), pend = s0 !== o.st, open = (el._oopen || {})[o.n];
+    ${list.map(o => { const s0 = st(o), p0 = pd(o), pend = s0 !== o.st || p0 !== (o.pd || 0), open = (el._oopen || {})[o.n];
       const cnt = o.i.reduce((a, i) => a + i.q, 0), who = o.u[2] ? '@' + o.u[2] : 'id ' + o.u[0];
       return `<div class="ord ${open ? 'open' : ''}">
-        <button class="ordh" data-ord="${o.n}"><b>№${o.n}${o.ind ? ' ⚡' : ''}</b><span class="ost2" style="--c:${ADM_STATUS[s0][1]}">${ADM_STATUS[s0][0]}${pend ? ' · не сохранено' : ''}</span>
+        <button class="ordh" data-ord="${o.n}"><b>№${o.n}${o.ind ? ' ⚡' : ''}</b><span class="ost2" style="--c:${ADM_STATUS[s0][1]}">${ADM_STATUS[s0][0]}${s0 !== 'cancelled' ? (p0 ? ' · 💰 оплачен' : ' · не оплачен') : ''}${pend ? ' · не сохранено' : ''}</span>
           <span class="ordw">${esc(o.u[1] || '')} <small>${esc(who)}</small></span><span class="ordm">${when(o.t)} · ${plural(cnt, 'товар', 'товара', 'товаров')} · ${o.d === 'courier' ? 'доставка' : 'самовывоз'}</span>
-          <span class="ords">${rub(o.s)}</span></button>
+          <span class="ords">${rub(o.s)}</span>${o.b && !o.ind ? `<span class="ordbatch">сбор ${o.b}</span>` : ''}</button>
         ${open ? `<div class="ordb">${o.i.map(i => `<div class="ordi"><span>${esc(i.title)}</span><span>× ${i.q}</span><span>${rub(i.price * i.q)}</span></div>`).join('')}
           ${o.c ? `<div class="ordc">💬 ${esc(o.c)}</div>` : ''}
           <div class="ordact">${o.u[2] ? `<a class="pill ghost" href="https://t.me/${encodeURIComponent(o.u[2])}" target="_blank" rel="noopener">Написать</a>` : ''}
-            ${(ADM_NEXT[o.st] || []).map(([k, t]) => `<button class="pill ${k === 'cancelled' ? 'warn' : ''} ${s0 === k ? 'sel' : ''}" data-ost="${o.n}:${k}">${t}</button>`).join('')}
-            ${pend ? `<button class="pill ghost" data-ost="${o.n}:">Отменить изменение</button>` : ''}</div></div>` : ''}
+            ${o.st !== 'cancelled' ? `<button class="pill ${p0 ? 'sel' : 'ghost'}" data-opaid="${o.n}">${p0 ? '💰 Оплачен ✓' : '💰 Отметить оплату'}</button>` : ''}
+            ${admNext(o.st).map(k => `<button class="pill ${k === 'cancelled' ? 'warn' : ''} ${s0 === k ? 'sel' : ''}" data-ost="${o.n}:${k}">${ADM_BTN[k]}</button>`).join('')}
+            ${pend ? `<button class="pill ghost" data-ost="${o.n}:">Отменить изменение</button>` : ''}</div>
+          ${!o.ind && o.b && admNext(o.st).some(k => ['supplier', 'transit', 'sorting', 'ready'].includes(k)) ?
+            `<div class="admhint small">🏭 🚚 🗂 📦 ставятся сразу всем заказам сбора ${o.b}</div>` : ''}</div>` : ''}
       </div>`; }).join('') || '<div class="empty small">Тут пусто</div>'}
   </div>`;
 }
@@ -1535,6 +1569,10 @@ function admEvent(e, el){
     PEND.coin = (PEND.coin || []).concat([[u, v, why || 'от продавца']]); savePend(); hap(); refreshSheets(); admDot(); toast('Начислится после «Сохранить»'); return true; }
   const rc = t.closest('[data-rcard]'); if (rc){ PEND.card = PEND.card === +rc.dataset.rcard ? 0 : +rc.dataset.rcard; savePend(); hap(); refreshSheets(); admDot(); return true; }
   const oh = t.closest('[data-ord]'); if (oh){ el._oopen = el._oopen || {}; el._oopen[oh.dataset.ord] = !el._oopen[oh.dataset.ord]; drawSheet(el); return true; }
+  const op = t.closest('[data-opaid]'); if (op){ const n = +op.dataset.opaid, o = ORD && ORD.orders.find(x => x.n === n);
+    const cur = (PEND.paid || []).find(x => x[0] === n), now = cur ? cur[1] : (o && o.pd) || 0;
+    PEND.paid = (PEND.paid || []).filter(x => x[0] !== n); if ((now ? 0 : 1) !== ((o && o.pd) || 0)) PEND.paid.push([n, now ? 0 : 1]);
+    savePend(); hap(); refreshSheets(); admDot(); return true; }
   const os = t.closest('[data-ost]'); if (os){ const [n, st] = os.dataset.ost.split(':'); PEND.st = PEND.st.filter(x => x[0] !== +n);
     if (st) PEND.st.push([+n, st]); savePend(); hap(); refreshSheets(); admDot(); return true; }
   const a = t.closest('[data-adm]'); if (!a || a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') return false;
@@ -1542,7 +1580,7 @@ function admEvent(e, el){
   if (kind === 'photo'){ PEND.photo = PEND.photo.includes(tg) ? PEND.photo.filter(x => x !== tg) : [...PEND.photo, tg];
     if (PEND.photo.includes(tg)) toast('После «Сохранить» бот попросит прислать фото в чат'); }
   else if (kind === 'nophoto'){ PEND.nophoto = PEND.nophoto.includes(tg) ? PEND.nophoto.filter(x => x !== tg) : [...PEND.nophoto, tg]; }
-  else if (kind === 'reset'){ PEND = { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [] }; }
+  else if (kind === 'reset'){ PEND = { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [] }; }
   else if (kind === 'save'){ admSave(); return true; }
   else if (kind === 'reload'){ ORD = null; ordErr = ''; drawSheet(el); return true; }
   else return false;
@@ -1582,6 +1620,7 @@ function admPayload(){
   if (PEND.nophoto.length) p.nophoto = PEND.nophoto;
   if (PEND.photo.length) p.photo = PEND.photo;
   if (PEND.st.length) p.st = PEND.st;
+  if ((PEND.paid || []).length) p.paid = PEND.paid;
   return p;
 }
 function admSave(){
@@ -1598,8 +1637,9 @@ function admSave(){
   Object.assign(S, p.ind || {});
   for (const t of p.nophoto || []) delete (S[t.startsWith('L:') ? 'lphoto' : 'iphoto'] || {})[t.replace(/^L:/, '')];
   if (ORD) for (const [n, st] of p.st || []){ const o = ORD.orders.find(x => x.n === n); if (o) o.st = st; }
+  if (ORD) for (const [n, v] of p.paid || []){ const o = ORD.orders.find(x => x.n === n); if (o) o.pd = v; }
   const photos = p.photo ? p.photo.length : 0;
-  PEND = { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [] }; savePend();
+  PEND = { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [] }; savePend();
   init(RAW_CATALOG, true); refreshSheets(); admDot();
   toast('Демо: применено на этом экране' + (photos ? `. В Telegram бот попросил бы ${plural(photos, 'фото', 'фото', 'фото')}` : '') + '.');
 }
