@@ -428,6 +428,12 @@ img{pointer-events:none}   /* долгое нажатие на картинку 
 .fback svg{width:22px;height:22px}
 .fback[hidden]{display:none}
 body.barup .fback{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+.totop{position:fixed;z-index:35;right:max(14px,calc(50% - 266px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);display:grid;place-items:center;box-shadow:0 6px 22px rgba(0,0,0,.28)}
+.totop svg{width:22px;height:22px}
+.totop[hidden]{display:none}
+body.barup .totop{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+@media (min-width:900px){.totop{right:max(14px,calc(50% - 476px))}}
 .sheet::after{content:"";display:block;height:76px}
 .hero{border-radius:var(--r);aspect-ratio:2/1;max-width:100%}
 .hero .mono{font-size:64px;left:18px;bottom:10px}
@@ -509,6 +515,11 @@ pre.payload{text-align:left;background:var(--surface);border-radius:var(--r-s);p
   .app .grid, .app .cats{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 #meBtn{margin-left:auto}
+.uc{padding:12px 14px}
+.uc .uh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.uc .um{font-size:12px;color:var(--muted);margin-top:4px}
+.uc .ordact{margin-top:10px;padding:0;border:0}
+.uc .admhint{margin-top:8px}
 </style>
 
 <div class="bgfx" aria-hidden="true"><canvas id="bgfx"></canvas></div>
@@ -536,6 +547,7 @@ pre.payload{text-align:left;background:var(--surface);border-radius:var(--r-s);p
 </div>
 <div class="cartbar pad" id="cartbar" hidden><div class="inbar"><button class="cta" id="cta"></button></div></div>
 <div id="sheets"></div>
+<button class="totop" id="totop" aria-label="Наверх" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
 <button class="fback" id="fback" aria-label="Назад" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
 
 <script>
@@ -686,14 +698,31 @@ function orderCycles(y, m){
   return [[fri1, fri1 + 3], [fri1 + 14, fri1 + 17]].map(([f, mo]) => ({
     start: new Date(y, m, f, 10), close: new Date(y, m, mo, 19), sort: new Date(y, m, mo + 5), sortEnd: new Date(y, m, mo + 7), arrive: new Date(y, m, mo + 7), arriveEnd: new Date(y, m, mo + 8) }));
 }
+function cycOvr(){   // ручной сбор из админки (S.cyc = [начало, конец] в секундах); в демо — из несохранённого
+  const v = (PEND && PEND.cyc !== undefined && DEMO) ? PEND.cyc : (S && S.cyc);
+  return Array.isArray(v) && v.length === 2 && v[1] > v[0] ? v : null; }
+function mkCycle(start, close){ const d = (n, h) => new Date(close.getFullYear(), close.getMonth(), close.getDate() + n, h || 0);
+  return { start, close, sort: d(5), sortEnd: d(7), arrive: d(7), arriveEnd: d(8), manual: true }; }
+function allCycles(now = new Date(), span = [-1, 0, 1]){   // плановые сборы + ручной (заменяет плановый, с которым пересекается)
+  let cs = span.flatMap(k => orderCycles(now.getFullYear(), now.getMonth() + k));
+  const o = cycOvr();
+  if (o){ const a = new Date(o[0] * 1000), b = new Date(o[1] * 1000);
+    cs = cs.filter(c => !(c.start < b && a < c.close)).concat(mkCycle(a, b)).sort((x, y) => x.start - y.start); }
+  return cs; }
+const hm = d => d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+const wd = d => ['в воскресенье', 'в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу'][d.getDay()];
 function orderPhase(now = new Date()){
-  const cs = [-1, 0, 1].flatMap(k => orderCycles(now.getFullYear(), now.getMonth() + k));
+  const cs = allCycles(now);
   const dm = d => d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   const open = cs.find(c => now >= c.start && now < c.close);
-  if (open) return { cls: 'r', title: 'Приём заявок открыт', lbl: 'до закрытия', to: open.close, sub: 'закрываем в понедельник ' + dm(open.close) + ' в 19:00' };
+  if (open) return { cls: 'r', title: 'Приём заявок открыт', lbl: 'до закрытия', to: open.close, sub: 'закрываем ' + wd(open.close) + ' ' + dm(open.close) + ' в ' + hm(open.close) };
   const nx = cs.find(c => c.start > now);
-  const ph = { cls: 'w', title: 'Ждём старт заказа', lbl: 'до старта', to: nx.start, sub: 'старт в пятницу ' + dm(nx.start) + ' в 10:00' };
-  // что сейчас с прошлым (уже закрытым) заказом
+  const ph = { cls: 'w', title: 'Ждём старт заказа', lbl: 'до старта', to: nx.start, sub: 'старт ' + wd(nx.start) + ' ' + dm(nx.start) + ' в ' + hm(nx.start) };
+  // что сейчас с прошлым (уже закрытым) заказом: этап, который поставил продавец, — или примерно по датам
+  const last = cs.filter(c => c.close <= now).pop(), stg = last && batchStage(last);
+  // этап сбора от продавца — заголовком баннера (вместо «Ждём старт заказа»), таймер до следующего старта остаётся
+  const BT = { supplier: ['y', 'Заказ у поставщика'], transit: ['y', 'Заказ в пути'], sorting: ['g', 'Заказ на сортировке'], ready: ['p', 'Заказ готов к получению'] };
+  if (stg && BT[stg] && now - last.close < 21 * 864e5){ Object.assign(ph, { cls: BT[stg][0], title: BT[stg][1] }); return ph; }
   const cur = cs.find(c => now >= c.close && now < c.arriveEnd);
   if (cur){
     if (now < cur.sort) Object.assign(ph, { batch: 'y', bt: 'прошлый заказ у поставщика · сортировка примерно ' + dm(cur.sort) });
@@ -722,7 +751,7 @@ function calHtml(d = new Date()){
   const lead = (first.getDay() + 6) % 7;                 // понедельник — первый
   // все циклы, чьи даты попадают в этот месяц (и хвост прошлого месяца)
   const inM = dd => dd.getFullYear() === y && dd.getMonth() === m ? dd.getDate() : null;
-  const cyc = [...orderCycles(y, m - 1), ...orderCycles(y, m)];
+  const cyc = allCycles(new Date(y, m, 15), [-1, 0]);
   const set = f => new Set(cyc.map(f).map(inM).filter(Boolean));
   const HOT = set(c => c.start), GOLD = set(c => c.close), PINK = set(c => c.arrive);
   const SORT = new Set([...set(c => c.sort), ...set(c => new Date(c.sort.getFullYear(), c.sort.getMonth(), c.sort.getDate() + 1))]);
@@ -994,6 +1023,7 @@ function openSheet(kind, arg, extra){
       const act = activeOrder(); if (act && act.ed){ EDIT = act.n; store.set('klsd.edit', act.n); useCoins = !!act.co; store.set('klsd.usecoins', useCoins); }
       hap(); refreshSheets(); renderCart(); } return; }
   });
+  el.addEventListener('input', e => { if (e.target.id === 'uq'){ el._uq = e.target.value; filterUsers(el); return; } });
   el.addEventListener('input', e => { if (e.target.id === 'aq'){ el._aq = e.target.value; const pos = e.target.selectionStart; drawSheet(el); const i = el.querySelector('#aq'); i.focus(); i.setSelectionRange(pos, pos); return; }
                                       if ((kind === 'admin' || kind === 'aline') && admInput(e)) return;
                                       if (e.target.id === 'lq'){ el._lq = e.target.value; const pos = e.target.selectionStart; drawSheet(el); const i = el.querySelector('#lq'); i.focus(); i.setSelectionRange(pos, pos); }
@@ -1142,7 +1172,7 @@ async function loadMy(quiet){   // quiet — фоновая проверка: п
   meDot(); if (['me', 'cart'].includes(topKind())) refreshSheets();   // баланс монеток виден и в корзине
 }
 function cycleStart(now = new Date()){
-  const cs = [-1, 0, 1].flatMap(k => orderCycles(now.getFullYear(), now.getMonth() + k));
+  const cs = allCycles(now);
   const c = cs.find(c => now >= c.start && now < c.close); return c ? c.start : null;
 }
 function activeOrder(){   // один открытый заказ (новый/резерв) за раз; в один сбор (пт–пн) — вообще один заказ
@@ -1252,7 +1282,11 @@ function doneView(o){
 document.addEventListener('click', e => { if (e.target.id === 'again'){ while (stack.length) closeSheet(); window.scrollTo({ top: 0 }); } });
 
 function topKind(){ return stack.length ? stack[stack.length - 1].dataset.kind : null; }
-function syncFback(){ const k = topKind(); $('#fback').hidden = !k || k === 'admin' || k === 'aline';   // в админке внизу своя панель «Сохранить»
+// кнопка «наверх»: появляется, когда нажали «Показать ещё» и ушли вниз по списку
+function syncTop(){ $('#totop').hidden = !(state.shown > 40 && window.scrollY > 900 && !topKind()); }
+window.addEventListener('scroll', syncTop, { passive: true });
+$('#totop').addEventListener('click', () => { window.scrollTo({ top: 0 }); hap(); syncTop(); });
+function syncFback(){ syncTop(); const k = topKind(); $('#fback').hidden = !k || k === 'admin' || k === 'aline';   // в админке внизу своя панель «Сохранить»
   document.body.classList.toggle('barup', !$('#cartbar').hidden); }
 function renderCart(){
   const t = totals(), k = topKind();
@@ -1389,10 +1423,10 @@ const ADMKEY = (location.hash.match(/adm=([0-9a-f]{64})/) || [])[1] || '';
 // демо-админка — только в превью (файл на компьютере / артефакт), на настоящем сайте её нет
 const DEMO = !TG && (location.protocol === 'file:' || /claude|localhost|127\.0\.0\.1/.test(location.hostname));
 const IS_ADMIN = !!ADMKEY || DEMO;
-let PEND = store.get('klsd.pend', null) || { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [] };
+let PEND = store.get('klsd.pend', null) || { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [], ban: [] };
 PEND.paid = PEND.paid || [];
 const pendCount = () => Object.keys(PEND.price).length + Object.keys(PEND.hide).length + Object.keys(PEND.banners).length
-  + (PEND.min_order ? 1 : 0) + Object.keys(PEND.ind || {}).length + (PEND.coin || []).length + (PEND.card ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length + (PEND.paid || []).length;
+  + (PEND.min_order ? 1 : 0) + Object.keys(PEND.ind || {}).length + (PEND.coin || []).length + (PEND.ban || []).length + (PEND.cyc !== undefined ? 1 : 0) + (PEND.bst ? 1 : 0) + (PEND.card ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length + (PEND.paid || []).length;
 const savePend = () => store.set('klsd.pend', PEND);
 const ADM_STATUS = { reserved: ['📌 Резерв', '#b07f00'], new: ['🆕 Новый', '#4f6bff'], confirmed: ['✅ Подтверждён', '#1b8f2f'],
   supplier: ['🏭 У поставщика', '#7a4fff'], transit: ['🚚 В пути', '#0b8aa8'], sorting: ['🗂 На сортировке', '#0b8aa8'],
@@ -1422,14 +1456,32 @@ function adminView(el){
       <button role="tab" data-atab="shop" aria-selected="${tab === 'shop'}">Магазин</button>
       <button role="tab" data-atab="orders" aria-selected="${tab === 'orders'}">Заказы</button>
       <button role="tab" data-atab="refs" aria-selected="${tab === 'refs'}">Рефералка</button>
+      <button role="tab" data-atab="users" aria-selected="${tab === 'users'}">Люди</button>
     </div>
-    ${tab === 'shop' ? admShopView(el) : tab === 'refs' ? admRefsView(el) : admOrdersView(el)}
+    ${tab === 'shop' ? admShopView(el) : tab === 'refs' ? admRefsView(el) : tab === 'users' ? admUsersView(el) : admOrdersView(el)}
     ${admSaveBar()}
   </div>`;
 }
 function admSaveBar(){ const n = pendCount();
   return n ? `<div class="admsave"><span>Не сохранено: ${n}</span><button class="ghost" data-adm="reset">Сбросить</button><button class="go" data-adm="save">Сохранить</button></div>` : ''; }
 
+function admCycView(){   // сбор заявок вручную: начать раньше / закончить раньше / свои даты / вернуть расписание
+  const now = new Date(), cs = allCycles(now), open = cs.find(c => now >= c.start && now < c.close), nx = cs.find(c => c.start > now);
+  const f = d => d.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  const loc = d => new Date(d - d.getTimezoneOffset() * 60e3).toISOString().slice(0, 16);
+  const ovr = cycOvr(), pend = PEND.cyc !== undefined;
+  const cur = open || nx, s0 = PEND.cyc && PEND.cyc.length ? new Date(PEND.cyc[0] * 1000) : cur.start, c0 = PEND.cyc && PEND.cyc.length ? new Date(PEND.cyc[1] * 1000) : cur.close;
+  return `<div class="admsec"><h3>Сбор заявок</h3>
+    <div class="admhint">${open ? `🟢 Идёт сбор: до ${f(open.close)}` : `⏸ Сбора нет. Ближайший: ${f(nx.start)} — ${f(nx.close)}`}${ovr ? ' · <b>вручную</b>' : ' · по расписанию'}${pend ? ' · <b>не сохранено</b>' : ''}</div>
+    <div class="ordact">
+      ${open ? `<button class="pill warn" data-cyc="stop">⏹ Закончить сбор сейчас</button>` : `<button class="pill" data-cyc="start">▶️ Начать сбор сейчас</button>`}
+      ${ovr || (pend && PEND.cyc.length) ? `<button class="pill ghost" data-cyc="reset">↩️ Вернуть по расписанию</button>` : ''}
+      ${pend ? `<button class="pill ghost" data-cyc="undo">Отменить изменение</button>` : ''}
+    </div>
+    <label class="admrow"><span>Начало</span><input type="datetime-local" data-adm="cycs" value="${loc(s0)}"></label>
+    <label class="admrow"><span>Конец</span><input type="datetime-local" data-adm="cycc" value="${loc(c0)}"></label>
+    <div class="admhint small">Ручной сбор заменяет плановый, с которым пересекается. Резервы разберутся сами, когда сбор начнётся.</div></div>`;
+}
 function admShopView(el){
   const q = norm(el._aq || '');
   const lines = q ? Object.values(ADM_LINES).filter(x => norm(x.l.t + ' ' + x.items.map(i => i[1]).join(' ')).includes(q)).slice(0, 40) : [];
@@ -1437,6 +1489,7 @@ function admShopView(el){
     <div class="admsec"><h3>Общее</h3>
       <label class="admrow"><span>Минимальный заказ, ₽</span><input type="number" inputmode="numeric" data-adm="min" value="${PEND.min_order || MIN_ORDER}"></label>
     </div>
+    ${admCycView()}
     <div class="admsec"><h3>Индивидуальный заказ</h3>
       <div class="admhint">Вне сбора: если у каждого поставщика из корзины набрана его минималка, кнопка предлагает «заказать сразу». Бот считает твою прибыль по наценкам: нужно не меньше порога + доставка за каждого поставщика.</div>
       ${[['ind_min1', 'Минималка NastyLab, ₽'], ['ind_min2', 'Минималка Шишки, ₽'], ['ind_profit', 'Прибыль не меньше, ₽'], ['ind_ship', 'Доставка СДЭК за поставщика, ₽']].map(([k, t]) =>
@@ -1490,7 +1543,9 @@ let ORD = null, ordErr = '', ordLoading = false;
 const DEMO_ORDERS = () => { const now = Math.floor(Date.now() / 1000), any = Object.values(ITEMS).filter(x => x.l.cat === 'salt').slice(0, 40);
   const mk = (n, st, ago, name, user, idx, d) => { const its = idx.map(([k, q]) => { const x = any[k % any.length]; return { title: split(x.it[1])[0] + ' (' + x.l.t + ')', q, price: x.it[2], src: srcOf(x.it, x.l) }; });
     return { n, st, t: now - ago, u: [100 + n, name, user], i: its, s: its.reduce((a, i) => a + i.price * i.q, 0), d, c: n === 14 ? 'после 18, позвоню' : '', pd: n === 12 ? 1 : 0, b: '04.12' }; };
-  return { at: now, demo: true, orders: [mk(15, 'reserved', 3600, 'Денис', 'den_vape', [[3, 2], [7, 3]], 'pickup'), mk(14, 'new', 86400, 'Аня', 'anya_k', [[1, 4], [9, 2], [12, 1]], 'courier'),
+  const users = [[101, 'Аня', 'anya_k', 'approved', 3], [102, 'Олег', 'oleg77', 'approved', 1], [103, 'Денис', 'den_vape', 'banned', 0], [104, 'Лиза', '', 'pending', 0], [1, 'Илья', 'admin', 'approved', 0, 1]]
+    .map(([id, n, un, st, o, adm]) => ({ id, n, un, st, o, adm: adm || 0, t: now - id * 3600 }));
+  return { at: now, demo: true, users, orders: [mk(15, 'reserved', 3600, 'Денис', 'den_vape', [[3, 2], [7, 3]], 'pickup'), mk(14, 'new', 86400, 'Аня', 'anya_k', [[1, 4], [9, 2], [12, 1]], 'courier'),
     mk(13, 'confirmed', 2 * 86400, 'Макс', '', [[5, 6]], 'pickup'), mk(12, 'transit', 4 * 86400, 'Олег', 'oleg77', [[2, 3], [8, 2]], 'pickup'), mk(11, 'done', 9 * 86400, 'Аня', 'anya_k', [[4, 5]], 'pickup')] }; };
 async function unsealOrders(hexKey, b64){
   const raw = Uint8Array.from(atob(b64.trim()), c => c.charCodeAt(0)), key = new Uint8Array(hexKey.match(/../g).map(h => parseInt(h, 16)));
@@ -1521,7 +1576,7 @@ async function loadOrders(el){
 }
 async function pollOrders(){   // админка открыта на заказах/рефералке — подтягиваем новое без перезахода
   const el = stack.find(x => x.dataset.kind === 'admin');
-  if (!el || !['orders', 'refs'].includes(el._tab) || !ADMKEY || DEMO || ordLoading || busyTyping()) return;
+  if (!el || !['orders', 'refs', 'users'].includes(el._tab) || !ADMKEY || DEMO || ordLoading || busyTyping()) return;
   try {
     const r = await fetch('orders.enc?' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
     const nw = await unsealOrders(ADMKEY, await r.text());
@@ -1531,6 +1586,38 @@ async function pollOrders(){   // админка открыта на заказ�
 }
 // живое обновление: пока магазин открыт, раз в 15 секунд проверяем профиль (и заказы в админке)
 setInterval(() => { if (document.hidden) return; if (UKEY.length) loadMy(true); pollOrders(); }, 15000);
+const U_ST = { approved: ['✅ Есть доступ', '#1b8f2f'], banned: ['⛔ Заблокирован', '#a3001a'], pending: ['⏳ Заявка', '#b07f00'],
+  declined: ['Отклонён', '#7a7f8c'], new: ['Не просил доступ', '#7a7f8c'] };
+function admUsersView(el){   // все, кто заходил в бота; заблокированные — отдельным чёрным списком
+  if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю…</div>'; }
+  if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
+  const users = ORD.users || [];
+  const ban = u => { const x = (PEND.ban || []).find(x => x[0] === u.id); return x ? (x[1] ? 'banned' : 'approved') : u.st; };
+  const black = users.filter(u => ban(u) === 'banned'), rest = users.filter(u => ban(u) !== 'banned');
+  const FL = { all: ['Все', () => true], ok: ['С доступом', u => ban(u) === 'approved'], req: ['Заявки', u => ban(u) === 'pending'] };
+  const f = FL[el._uf] ? el._uf : 'all', list = rest.filter(FL[f][1]);
+  const card = u => { const s0 = ban(u), pend = s0 !== u.st, st = U_ST[s0] || [s0, '#7a7f8c'];
+    const key = (u.n + ' ' + u.un + ' ' + u.id).toLowerCase();
+    return `<div class="ord uc" data-ukey="${esc(key)}"><div class="uh"><b>${esc(u.n || String(u.id))}${u.un ? ' <small>@' + esc(u.un) + '</small>' : ''}</b>
+      <span class="ost2" style="--c:${st[1]}">${st[0]}${pend ? ' · не сохранено' : ''}</span></div>
+      <div class="um">ID ${u.id}${u.t ? ' · с ' + new Date(u.t * 1000).toLocaleDateString('ru-RU') : ''}${u.o ? ' · ' + plural(u.o, 'заказ', 'заказа', 'заказов') : ''}</div>
+      ${u.adm ? '<div class="admhint small">Админ — заблокировать нельзя</div>' : `<div class="ordact">
+        ${s0 === 'banned' ? `<button class="pill" data-uban="${u.id}:0">✅ Вернуть доступ</button>`
+          : s0 === 'approved' ? `<button class="pill warn" data-uban="${u.id}:1">⛔ В чёрный список</button>`
+          : `<button class="pill" data-uban="${u.id}:0">✅ Пустить</button><button class="pill warn" data-uban="${u.id}:1">⛔ В чёрный список</button>`}
+        ${pend ? `<button class="pill ghost" data-uban="${u.id}:">Отменить изменение</button>` : ''}</div>`}</div>`; };
+  return `<label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="uq" type="search" placeholder="Имя, @ник или ID" value="${esc(el._uq || '')}" autocomplete="off"></label>
+    <div class="admsec"><h3>Пользователи</h3>
+      <div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) =>
+        `<button data-uf="${k}" aria-pressed="${k === f}">${t} <small>${rest.filter(fn).length}</small></button>`).join('')}</div>
+      ${list.length ? list.map(card).join('') : '<div class="empty small">Никого</div>'}</div>
+    <div class="admsec"><h3>⛔ Чёрный список · ${black.length}</h3>
+      <div class="admhint small">Им закрыт магазин: нет кнопки, заказы не принимаются. «Вернуть доступ» — и после «Сохранить» человеку снова придёт приветствие с кнопкой магазина.</div>
+      ${black.length ? black.map(card).join('') : '<div class="empty small">Пусто</div>'}</div>`;
+}
+function filterUsers(el){ const q = (el._uq || '').trim().toLowerCase();
+  el.querySelectorAll('[data-ukey]').forEach(d => { d.hidden = !!q && !d.dataset.ukey.includes(q.replace(/^@/, '')); }); }
 function admRefsView(el){
   if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю…</div>'; }
   if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
@@ -1556,6 +1643,25 @@ function admRefsView(el){
       </div>` : ''}</div>`; }).join('') || '<div class="empty small">Пока никто не создал рефералку</div>'}
     ${cfg}`;
 }
+const BATCH_STEPS = [['supplier', '🏭 У поставщика'], ['transit', '🚚 В пути'], ['sorting', '🗂 Сортировка'], ['ready', '📦 Готов к получению']];
+function curBatch(now = new Date()){   // последний общий сбор, который уже начался
+  return allCycles(now).filter(c => c.start <= now).pop(); }
+function batchStage(c){   // этап сбора: из настроек (поставил админ) или по самому «отстающему» заказу
+  const key = Math.floor(+c.start / 1000), b = S && S.bst;
+  return b && Math.abs(b.b - key) < 120 ? b.st : null; }
+function admBatchView(){   // этап всего общего сбора разом
+  const now = new Date(), c = curBatch(now); if (!c) return '';
+  const key = Math.floor(+c.start / 1000), dd = c.start.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+  const open = now < c.close, mine = (ORD.orders || []).filter(o => o.b === dd && !o.ind && !['cancelled', 'reserved'].includes(o.st));
+  const pend = PEND.bst && PEND.bst[0] === key ? PEND.bst[1] : null, cur = pend || batchStage(c);
+  const f = d => d.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  return `<div class="admsec"><h3>Общий сбор ${dd}</h3>
+    <div class="admhint">${open ? '🟢 приём заявок идёт до ' + f(c.close) : 'приём закрыт ' + f(c.close)} · ${plural(mine.length, 'заказ', 'заказа', 'заказов')}
+      ${cur ? ' · этап: <b>' + BATCH_STEPS.find(x => x[0] === cur)[1] + '</b>' : ''}${pend ? ' · <b>не сохранено</b>' : ''}</div>
+    <div class="ordact">${BATCH_STEPS.map(([k, t]) => `<button class="pill ${cur === k ? 'sel' : 'ghost'}" data-bst="${key}:${k}">${t}</button>`).join('')}
+      ${pend ? '<button class="pill ghost" data-bst="">Отменить изменение</button>' : ''}</div>
+    <div class="admhint small">Этап ставится всем заказам этого сбора (кроме ⚡ индивидуальных) и показывается покупателям в баннере «Статус заказа». Начать или закончить приём — во вкладке «Магазин».</div></div>`;
+}
 function admOrdersView(el){
   if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю заказы…</div>'; }
   if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
@@ -1568,7 +1674,7 @@ function admOrdersView(el){
   const list = ORD.orders.filter(o => FL[f][1]({ ...o, st: st(o), pd: pd(o) }));
   const sum = list.reduce((a, o) => a + o.s, 0);
   const when = t => new Date(t * 1000).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  return `<div class="admsec">
+  return `${admBatchView()}<div class="admsec">
     <div class="ordtop"><span>${ORD.demo ? 'демо-заказы для примера' : ORD.at ? 'обновлено ' + when(ORD.at) : 'заказов ещё не было'}</span><button class="pill ghost" data-adm="reload">↻ Обновить</button></div>
     <div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) => `<button data-ofil="${k}" aria-pressed="${k === f}">${t} <small>${ORD.orders.filter(o => fn({ ...o, st: st(o), pd: pd(o) })).length}</small></button>`).join('')}</div>
     <div class="ordsum">${plural(list.length, 'заказ', 'заказа', 'заказов')} на ${rub(sum)}</div>
@@ -1603,6 +1709,21 @@ function admEvent(e, el){
     PEND.coin = (PEND.coin || []).concat([[u, v, why || 'от продавца']]); savePend(); hap(); refreshSheets(); admDot(); toast('Начислится после «Сохранить»'); return true; }
   const rc = t.closest('[data-rcard]'); if (rc){ PEND.card = PEND.card === +rc.dataset.rcard ? 0 : +rc.dataset.rcard; savePend(); hap(); refreshSheets(); admDot(); return true; }
   const oh = t.closest('[data-ord]'); if (oh){ el._oopen = el._oopen || {}; el._oopen[oh.dataset.ord] = !el._oopen[oh.dataset.ord]; drawSheet(el); return true; }
+  const bs = t.closest('[data-bst]'); if (bs){ const v = bs.dataset.bst;
+    if (!v) delete PEND.bst; else { const [k, st] = v.split(':'); PEND.bst = [+k, st]; }
+    savePend(); hap(); refreshSheets(); admDot(); return true; }
+  const cy = t.closest('[data-cyc]'); if (cy){ const a = cy.dataset.cyc, now = new Date(), cs = allCycles(now);
+    const open = cs.find(c => now >= c.start && now < c.close), nx = cs.find(c => c.start > now), sec = d => Math.floor(+d / 1000);
+    if (a === 'stop' && open) PEND.cyc = [sec(open.start), sec(now)];
+    if (a === 'start' && nx) PEND.cyc = [sec(now), sec(nx.close)];
+    if (a === 'reset') PEND.cyc = [];
+    if (a === 'undo') delete PEND.cyc;
+    savePend(); hap(); refreshSheets(); admDot(); return true; }
+  const uf = t.closest('[data-uf]'); if (uf){ el._uf = uf.dataset.uf; drawSheet(el); filterUsers(el); return true; }
+  const ub = t.closest('[data-uban]'); if (ub){ const [id, v] = ub.dataset.uban.split(':'), n = +id, u = ORD && (ORD.users || []).find(x => x.id === n);
+    PEND.ban = (PEND.ban || []).filter(x => x[0] !== n);
+    if (v !== '' && u && (+v ? 'banned' : 'approved') !== u.st) PEND.ban.push([n, +v]);
+    savePend(); hap(); drawSheet(el); filterUsers(el); admDot(); return true; }
   const op = t.closest('[data-opaid]'); if (op){ const n = +op.dataset.opaid, o = ORD && ORD.orders.find(x => x.n === n);
     const cur = (PEND.paid || []).find(x => x[0] === n), now = cur ? cur[1] : (o && o.pd) || 0;
     PEND.paid = (PEND.paid || []).filter(x => x[0] !== n); if ((now ? 0 : 1) !== ((o && o.pd) || 0)) PEND.paid.push([n, now ? 0 : 1]);
@@ -1614,7 +1735,7 @@ function admEvent(e, el){
   if (kind === 'photo'){ PEND.photo = PEND.photo.includes(tg) ? PEND.photo.filter(x => x !== tg) : [...PEND.photo, tg];
     if (PEND.photo.includes(tg)) toast('После «Сохранить» бот попросит прислать фото в чат'); }
   else if (kind === 'nophoto'){ PEND.nophoto = PEND.nophoto.includes(tg) ? PEND.nophoto.filter(x => x !== tg) : [...PEND.nophoto, tg]; }
-  else if (kind === 'reset'){ PEND = { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [] }; }
+  else if (kind === 'reset'){ PEND = { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [], ban: [] }; }
   else if (kind === 'save'){ admSave(); return true; }
   else if (kind === 'reload'){ ORD = null; ordErr = ''; drawSheet(el); return true; }
   else return false;
@@ -1624,6 +1745,15 @@ function admInput(e){
   const a = e.target.closest('[data-adm]'); if (!a) return false;
   const kind = a.dataset.adm, tg = a.dataset.t;
   if (kind === 'aq'){ return false; }
+  if (kind === 'cycs' || kind === 'cycc'){ const v = Math.floor(new Date(a.value).getTime() / 1000); if (!v) return true;
+    const now = new Date(), cs = allCycles(now), cur = cs.find(c => now >= c.start && now < c.close) || cs.find(c => c.start > now);
+    const pc = PEND.cyc && PEND.cyc.length ? PEND.cyc.slice() : [Math.floor(+cur.start / 1000), Math.floor(+cur.close / 1000)];
+    pc[kind === 'cycs' ? 0 : 1] = v;
+    if (pc[1] <= pc[0]){ toast('Конец должен быть позже начала'); return true; }
+    PEND.cyc = pc; savePend(); admDot();
+    const bar = e.target.closest('.adm'); if (bar){ const old = bar.querySelector('.admsave'), nu = admSaveBar();
+      if (old) old.outerHTML = nu || ''; else if (nu) bar.insertAdjacentHTML('beforeend', nu); }
+    return true; }
   if (kind === 'min'){ const v = parseInt(a.value, 10); if (v && v !== MIN_ORDER) PEND.min_order = v; else delete PEND.min_order; }
   else if (kind === 'ind'){ const v = parseInt(a.value, 10); PEND.ind = PEND.ind || {};
     if (v > 0 && v !== indCfg(tg)) PEND.ind[tg] = v; else delete PEND.ind[tg]; }
@@ -1648,6 +1778,8 @@ function admPayload(){
   if (Object.keys(PEND.hide).length) p.hide = PEND.hide;
   if (Object.keys(PEND.banners).length) p.banners = PEND.banners;
   if (PEND.min_order) p.min_order = PEND.min_order;
+  if (PEND.cyc !== undefined) p.cyc = PEND.cyc;
+  if (PEND.bst) p.bst = PEND.bst;
   if (Object.keys(PEND.ind || {}).length) p.ind = PEND.ind;
   if ((PEND.coin || []).length) p.coin = PEND.coin;
   if (PEND.card) p.card = PEND.card;
@@ -1655,6 +1787,7 @@ function admPayload(){
   if (PEND.photo.length) p.photo = PEND.photo;
   if (PEND.st.length) p.st = PEND.st;
   if ((PEND.paid || []).length) p.paid = PEND.paid;
+  if ((PEND.ban || []).length) p.ban = PEND.ban;
   return p;
 }
 function admSave(){
@@ -1668,12 +1801,16 @@ function admSave(){
   for (const [k, v] of Object.entries(p.hide || {})){ S.hide = S.hide || {}; if (v) S.hide[k] = 1; else delete S.hide[k]; }
   for (const [n, b] of Object.entries(p.banners || {})){ S.banners = S.banners || {}; S.banners[n] = Object.assign(S.banners[n] || {}, b); }
   if (p.min_order) S.min_order = p.min_order;
+  if (p.cyc !== undefined){ if (p.cyc.length) S.cyc = p.cyc; else delete S.cyc; }
+  if (p.bst){ S.bst = { b: p.bst[0], st: p.bst[1] }; const dd = new Date(p.bst[0] * 1000).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+    if (ORD) for (const o of ORD.orders) if (o.b === dd && !o.ind && !['cancelled', 'reserved', 'done'].includes(o.st) && FLOW.indexOf(o.st) < FLOW.indexOf(p.bst[1])) o.st = p.bst[1]; }
   Object.assign(S, p.ind || {});
   for (const t of p.nophoto || []) delete (S[t.startsWith('L:') ? 'lphoto' : 'iphoto'] || {})[t.replace(/^L:/, '')];
   if (ORD) for (const [n, st] of p.st || []){ const o = ORD.orders.find(x => x.n === n); if (o) o.st = st; }
   if (ORD) for (const [n, v] of p.paid || []){ const o = ORD.orders.find(x => x.n === n); if (o) o.pd = v; }
+  if (ORD) for (const [n, v] of p.ban || []){ const u = (ORD.users || []).find(x => x.id === n); if (u) u.st = v ? 'banned' : 'approved'; }
   const photos = p.photo ? p.photo.length : 0;
-  PEND = { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [] }; savePend();
+  PEND = { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [], ban: [] }; savePend();
   init(RAW_CATALOG, true); refreshSheets(); admDot();
   toast('Демо: применено на этом экране' + (photos ? `. В Telegram бот попросил бы ${plural(photos, 'фото', 'фото', 'фото')}` : '') + '.');
 }
