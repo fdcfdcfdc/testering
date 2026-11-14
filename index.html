@@ -524,6 +524,38 @@ pre.payload{text-align:left;background:var(--surface);border-radius:var(--r-s);p
 .ordcom{display:grid;gap:6px;margin:10px 0 4px;font-size:12px;color:var(--muted)}
 .ordcom textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px;resize:vertical;user-select:text;-webkit-user-select:text}
 .ordi.bm{width:100%;text-align:left;background:none;border:0;color:inherit;cursor:pointer;padding:8px 0;border-bottom:1px solid var(--line)}
+.admA{padding-bottom:150px}
+.admA .shead{position:relative}.admat{margin-left:auto;font-size:12px;color:var(--muted)}
+.admnav{position:fixed;left:0;right:0;bottom:0;z-index:31;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 10px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);max-width:560px;margin:0 auto}
+.admnav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0;border-radius:14px;color:var(--muted);font-size:12px;font-weight:700}
+.admnav button svg{width:22px;height:22px}
+.admnav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:800}
+.admnav i{position:absolute;top:2px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e0475f;color:#fff;font-style:normal;font-size:11px;font-weight:800;display:grid;place-items:center;box-sizing:border-box}
+.admA ~ .admsave, .admA .admsave{bottom:calc(84px + env(safe-area-inset-bottom))}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface);margin:4px 0 12px}
+.seg2 button{height:38px;border-radius:10px;font-weight:700;color:var(--muted)}
+.seg2 button[aria-selected="true"]{background:var(--ink);color:var(--bg);font-weight:800}
+.todob{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;display:grid;gap:10px;margin:4px 0 12px}
+.tbh{display:flex;align-items:baseline;gap:8px}.tbh b{font-size:18px;font-weight:800}.tbh span{font-size:13px;color:var(--accent);font-weight:700}
+.tbs{display:flex;align-items:center;gap:8px;font-size:14px}.tbs i{width:8px;height:8px;border-radius:50%;background:var(--muted)}.tbs i.on{background:#35c26b}
+.tbn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tbn div{background:var(--bg);border-radius:14px;padding:10px 12px}
+.tbn small{display:block;font-size:12px;color:var(--muted)}.tbn b{font-size:18px;font-weight:800}
+.tbgo{height:48px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:15px}
+.todol{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.todoi{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left;border-bottom:1px solid var(--line)}
+.todol .todoi:last-child{border-bottom:0}
+.todoi.wide{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:12px;font-weight:700}
+.todoi .tn{min-width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-weight:800;background:var(--accent-soft);color:var(--accent)}
+.todoi .t-unpaid{background:rgba(240,180,60,.16);color:#c88a12}.todoi .t-addr{background:rgba(53,194,107,.16);color:#1b8f2f}
+.todoi .tt{flex:1;display:flex;flex-direction:column}.todoi .tt small{font-size:13px;color:var(--muted)}
+.todoi .chev, .sgh .chev{margin-left:auto;color:var(--muted);font-size:20px}
+.sgrp{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:8px;overflow:hidden}
+.sgh{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left}
+.sgh span:first-child{display:flex;flex-direction:column}.sgh small{font-size:13px;color:var(--muted)}
+.sgrp.open .sgh .chev{transform:rotate(90deg)}
+.sgb{padding:0 16px 14px}
+.uc .ubtn{width:100%;text-align:left;background:none;padding:0}
+.ucoins{margin-left:auto;font-size:13px;color:var(--muted);font-weight:700}
 </style>
 
 <div class="bgfx" aria-hidden="true"><canvas id="bgfx"></canvas></div>
@@ -1103,7 +1135,11 @@ function indReady(){
   const by = {};
   for (const c of cartLines()){ const s = srcOf(c.it, c.l) || 1; by[s] = (by[s] || 0) + c.q * c.it[2]; }
   const ks = Object.keys(by);
-  return ks.length > 0 && ks.every(k => by[k] >= indCfg('ind_min' + k));
+  if (!ks.length || !ks.every(k => by[k] >= indCfg('ind_min' + k))) return false;
+  // прибыль продавца должна покрыть порог + доставку за каждого поставщика; доля наценки — грубая (бот проверит точно)
+  const rate = S && S.ind_rate; if (!rate) return false;
+  const est = ks.reduce((a, k) => a + by[k] * (rate[k] || 0), 0);
+  return est >= indCfg('ind_profit') + indCfg('ind_ship') * ks.length;
 }
 let useCoins = !!store.get('klsd.usecoins', false);
 function coinsMax(sum){   // сколько монеток можно списать: не больше баланса и cap% заказа (бот проверит то же)
@@ -1217,9 +1253,9 @@ function meView(el){
     ${fresh ? `<div class="prenote"><div><b>Заказ отправлен</b><span>Здесь он появится через минуту-две. Если что-то не так (например, позиция закончилась), бот напишет в чат.</span></div></div>` : ''}
     <div class="lbl">Текущая заявка</div>
     ${cur.length ? cur.map(o => card(o, true)).join('') : `<div class="empty small">активных заявок нет</div>`}
-    ${old.length ? `<div class="lbl">Все заявки · ${old.length}</div>${old.slice(0, el._allOld ? 999 : 10).map(o => card(o, false)).join('')}
-      ${old.length > 10 && !el._allOld ? '<button class="more" data-me="allold">Показать все</button>' : ''}` : ''}
     ${refBlock(el)}
+    ${old.length ? `<div class="lbl">Летопись · ${old.length}</div>${old.slice(0, el._allOld ? 999 : 10).map(o => card(o, false)).join('')}
+      ${old.length > 10 && !el._allOld ? '<button class="more" data-me="allold">Показать все</button>' : ''}` : ''}
   </div>`;
 }
 function refBlock(el){
@@ -1463,19 +1499,22 @@ function admBtnHtml(){ return IS_ADMIN ? `<button class="iconbtn admbtn" id="adm
   <span class="dot" id="admDot" hidden></span></button>` : ''; }
 function admDot(){ const d = $('#admDot'); if (!d) return; const n = pendCount(); d.hidden = !n; d.textContent = n; }
 
+const ADM_TABS = [['todo', 'Дела', '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/>'],
+  ['batches', 'Заказы', '<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/>'],
+  ['users', 'Люди', '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M17 4a4 4 0 010 8M22 21c0-3-2-5-4-6"/>'],
+  ['shop', 'Настройки', '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>']];
 function adminView(el){
-  const tab = el._tab || 'shop';
-  return `<div class="inner pad adm">
-    <div class="shead">${backSvg}<div class="ttl">Админ-панель${DEMO ? ' <span class="mock">демо</span>' : ''}</div></div>
-    <div class="admtabs" role="tablist">
-      <button role="tab" data-atab="shop" aria-selected="${tab === 'shop'}">Магазин</button>
-      <button role="tab" data-atab="batches" aria-selected="${tab === 'batches'}">Заказы</button>
-      <button role="tab" data-atab="orders" aria-selected="${tab === 'orders'}">Заявки</button>
-      <button role="tab" data-atab="refs" aria-selected="${tab === 'refs'}">Рефералка</button>
-      <button role="tab" data-atab="users" aria-selected="${tab === 'users'}">Люди</button>
-    </div>
-    ${tab === 'shop' ? admShopView(el) : tab === 'refs' ? admRefsView(el) : tab === 'users' ? admUsersView(el) : tab === 'batches' ? admBatchesView(el) : admOrdersView(el)}
+  let tab = el._tab || 'todo';
+  if (tab === 'orders') { tab = 'batches'; el._tab = 'batches'; el._osub = 'orders'; }   // старые ссылки
+  if (tab === 'refs') { tab = 'users'; el._tab = 'users'; }
+  const todo = ORD ? todoCount() : 0;
+  return `<div class="inner pad adm admA">
+    <div class="shead">${backSvg}<div class="ttl">${ADM_TABS.find(t => t[0] === tab)[1]}${DEMO ? ' <span class="mock">демо</span>' : ''}</div>
+      ${ORD && ORD.at ? `<small class="admat">${new Date(ORD.at * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</small>` : ''}</div>
+    ${tab === 'shop' ? admShopView(el) : tab === 'users' ? admUsersView(el) : tab === 'batches' ? admOrdersTab(el) : admTodoView(el)}
     ${admSaveBar()}
+    <nav class="admnav" aria-label="Разделы админки">${ADM_TABS.map(([k, t, ic]) =>
+      `<button data-atab="${k}" aria-current="${k === tab ? 'page' : 'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic}</svg>${t}${k === 'todo' && todo ? `<i>${todo}</i>` : ''}</button>`).join('')}</nav>
   </div>`;
 }
 function admSaveBar(){ const n = pendCount();
@@ -1501,32 +1540,36 @@ function admCycView(){   // сбор заявок вручную: начать �
 function admShopView(el){
   const q = norm(el._aq || '');
   const lines = q ? Object.values(ADM_LINES).filter(x => norm(x.l.t + ' ' + x.items.map(i => i[1]).join(' ')).includes(q)).slice(0, 40) : [];
+  const grp = (id, title, sub, body) => { const open = (el._sopen || {})[id];
+    return `<div class="sgrp ${open ? 'open' : ''}"><button class="sgh" data-sopen="${id}" aria-expanded="${!!open}"><span><b>${title}</b><small>${sub}</small></span><span class="chev">›</span></button>${open ? `<div class="sgb">${body}</div>` : ''}</div>`; };
+  const nPrice = Object.keys(S.price || {}).length + Object.keys(PEND.price || {}).length, nHide = Object.keys(S.hide || {}).length;
   return `
-    <div class="admsec"><h3>Общее</h3>
-      <label class="admrow"><span>Минимальный заказ, ₽</span><input type="number" inputmode="numeric" data-adm="min" value="${PEND.min_order || MIN_ORDER}"></label>
-    </div>
     ${admCycView()}
-    <div class="admsec"><h3>Индивидуальный заказ</h3>
-      <div class="admhint">Вне сбора: если у каждого поставщика из корзины набрана его минималка, кнопка предлагает «заказать сразу». Бот считает твою прибыль по наценкам: нужно не меньше порога + доставка за каждого поставщика.</div>
-      ${[['ind_min1', 'Минималка NastyLab, ₽'], ['ind_min2', 'Минималка Шишки, ₽'], ['ind_profit', 'Прибыль не меньше, ₽'], ['ind_ship', 'Доставка СДЭК за поставщика, ₽']].map(([k, t]) =>
-        `<label class="admrow"><span>${t}</span><input type="number" inputmode="numeric" data-adm="ind" data-t="${k}" value="${(PEND.ind || {})[k] || indCfg(k)}"></label>`).join('')}
-    </div>
-    <div class="admsec"><h3>Баннеры</h3>
-      ${BANNER_FIELDS.map(b => { const off = bset(b.n, 'off', false);
-        return `<div class="admban"><label class="admrow"><span>${b.n}. ${esc(b.name)}</span>
-          <span class="sw"><input type="checkbox" data-adm="boff" data-n="${b.n}" ${off ? '' : 'checked'}><i></i></span></label>
-          ${off ? '' : b.f.map(([k, lbl, def]) => `<label class="admfld"><small>${esc(lbl)}</small>${k === 'slogan'
-            ? `<textarea rows="3" data-adm="btxt" data-n="${b.n}" data-k="${k}">${esc(bset(b.n, k, def))}</textarea>`
-            : `<input data-adm="btxt" data-n="${b.n}" data-k="${k}" value="${esc(bset(b.n, k, def))}">`}</label>`).join('')}</div>`; }).join('')}
-    </div>
-    <div class="admsec"><h3>Товары, цены и фото</h3>
+    <div class="lbl">Витрина</div>
+    ${grp('items', 'Товары, цены и фото', (nPrice || nHide) ? `своих цен ${nPrice} · скрыто ${nHide}` : 'своя цена, скрыть, фото', `
       <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="aq" type="search" placeholder="линейка или вкус" value="${esc(el._aq || '')}" autocomplete="off"></label>
       ${q ? (lines.length ? `<div class="rows">${lines.map(x => `<button class="row admline" data-aline="${x.l.id}">
           ${admThumb(x.l)}<div class="txt"><div class="t1">${esc(x.l.t)}</div>
           <div class="t2">${esc(CATNAME[x.cat] || '')} · ${plural(x.items.length, 'позиция', 'позиции', 'позиций')}</div></div><span class="chev">›</span></button>`).join('')}</div>`
-        : '<div class="empty small">Ничего не нашлось</div>') : '<div class="admhint">Найди линейку — внутри можно поменять фото и цены.</div>'}
-    </div>`;
+        : '<div class="empty small">Ничего не нашлось</div>') : '<div class="admhint">Найди линейку — внутри можно поменять фото и цены.</div>'}`)}
+    ${grp('ban', 'Баннеры на главной', plural(BANNER_FIELDS.filter(b => !bset(b.n, 'off', false)).length, 'баннер', 'баннера', 'баннеров'),
+      BANNER_FIELDS.map(b => { const off = bset(b.n, 'off', false);
+        return `<div class="admban"><label class="admrow"><span>${b.n}. ${esc(b.name)}</span>
+          <span class="sw"><input type="checkbox" data-adm="boff" data-n="${b.n}" ${off ? '' : 'checked'}><i></i></span></label>
+          ${off ? '' : b.f.map(([k, lbl, def]) => `<label class="admfld"><small>${esc(lbl)}</small>${k === 'slogan'
+            ? `<textarea rows="3" data-adm="btxt" data-n="${b.n}" data-k="${k}">${esc(bset(b.n, k, def))}</textarea>`
+            : `<input data-adm="btxt" data-n="${b.n}" data-k="${k}" value="${esc(bset(b.n, k, def))}">`}</label>`).join('')}</div>`; }).join(''))}
+    ${grp('min', 'Минимальная заявка', rub(PEND.min_order || MIN_ORDER),
+      `<label class="admrow"><span>Минимальная заявка, ₽</span><input type="number" inputmode="numeric" data-adm="min" value="${PEND.min_order || MIN_ORDER}"></label>`)}
+    <div class="lbl">Правила</div>
+    ${grp('ind', '⚡ Индивидуальные заказы', `минималки ${rub(indCfg('ind_min1'))} / ${rub(indCfg('ind_min2'))} · прибыль от ${rub(indCfg('ind_profit'))} + ${rub(indCfg('ind_ship'))}`, `
+      <div class="admhint">Вне сбора кнопка «Заказать сразу» загорается, если набраны минималки поставщиков и прибыль скорее всего проходит. Бот перепроверяет по точным наценкам: не хватает — заявка не создаётся.</div>
+      ${[['ind_min1', 'Минималка NastyLab, ₽'], ['ind_min2', 'Минималка Шишки, ₽'], ['ind_profit', 'Прибыль не меньше, ₽'], ['ind_ship', 'Доставка СДЭК за поставщика, ₽']].map(([k, t]) =>
+        `<label class="admrow"><span>${t}</span><input type="number" inputmode="numeric" data-adm="ind" data-t="${k}" value="${(PEND.ind || {})[k] || indCfg(k)}"></label>`).join('')}`)}
+    ${grp('ref', '🪙 Рефералка', `${indCfg('ref_join')} за друга · ${indCfg('ref_pct')} % с заказа · до ${indCfg('ref_cap')} % заявки`,
+      [['ref_join', 'За одобренного друга, 🪙'], ['ref_pct', 'С заказа друга, %'], ['ref_cap', 'Оплатить монетками до, % заявки']].map(([k, t]) =>
+        `<label class="admrow"><span>${t}</span><input type="number" inputmode="numeric" data-adm="ind" data-t="${k}" value="${(PEND.ind || {})[k] || indCfg(k)}"></label>`).join(''))}`;
 }
 function admThumb(l){ const k = l.img; return k != null && C.imgs ? `<img class="th" src="${C.imgs[k]}" alt="">` : `<span class="th blank" style="--h:${hue(l.t)}"></span>`; }
 
@@ -1614,17 +1657,30 @@ function admUsersView(el){   // все, кто заходил в бота; за�
   const black = users.filter(u => ban(u) === 'banned'), rest = users.filter(u => ban(u) !== 'banned');
   const FL = { all: ['Все', () => true], ok: ['С доступом', u => ban(u) === 'approved'], req: ['Заявки', u => ban(u) === 'pending'] };
   const f = FL[el._uf] ? el._uf : 'all', list = rest.filter(FL[f][1]);
-  const card = u => { const s0 = ban(u), pend = s0 !== u.st, st = U_ST[s0] || [s0, '#7a7f8c'];
+  const refOf = uid => (ORD.refs || []).find(r => r.uid === uid);
+  const pc = uid => (PEND.coin || []).filter(c => c[0] === uid).reduce((a, c) => a + c[1], 0);
+  const card = u => { const s0 = ban(u), pend = s0 !== u.st, st = U_ST[s0] || [s0, '#7a7f8c'], r = refOf(u.id), open = (el._uopen || {})[u.id], p = pc(u.id);
     const key = (u.n + ' ' + u.un + ' ' + u.id).toLowerCase();
-    return `<div class="ord uc" data-ukey="${esc(key)}"><div class="uh"><b>${esc(u.n || String(u.id))}${u.un ? ' <small>@' + esc(u.un) + '</small>' : ''}</b>
-      <span class="ost2" style="--c:${st[1]}">${st[0]}${pend ? ' · не сохранено' : ''}</span></div>
-      <div class="um">ID ${u.id}${u.t ? ' · с ' + new Date(u.t * 1000).toLocaleDateString('ru-RU') : ''}${u.o ? ' · ' + plural(u.o, 'заказ', 'заказа', 'заказов') : ''}</div>
-      ${u.adm ? '<div class="admhint small">Админ — заблокировать нельзя</div>' : `<div class="ordact">
-        ${s0 === 'banned' ? `<button class="pill" data-uban="${u.id}:0">✅ Вернуть доступ</button>`
-          : s0 === 'approved' ? `<button class="pill warn" data-uban="${u.id}:1">⛔ В чёрный список</button>`
-          : `<button class="pill" data-uban="${u.id}:0">✅ Пустить</button><button class="pill warn" data-uban="${u.id}:1">⛔ В чёрный список</button>`}
-        ${pend ? `<button class="pill ghost" data-uban="${u.id}:">Отменить изменение</button>` : ''}</div>`}</div>`; };
-  return `<label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    return `<div class="ord uc ${open ? 'open' : ''}" data-ukey="${esc(key)}"><button class="uh ubtn" data-uopen="${u.id}"><b>${esc(u.n || String(u.id))}${u.un ? ' <small>@' + esc(u.un) + '</small>' : ''}</b>
+      <span class="ost2" style="--c:${st[1]}">${st[0]}${pend ? ' · не сохранено' : ''}</span><span class="ucoins">${r ? r.bal + (p ? (p > 0 ? ' +' : ' ') + p : '') + ' 🪙' : p ? '+' + p + ' 🪙' : ''}</span></button>
+      <div class="um">ID ${u.id}${u.t ? ' · с ' + new Date(u.t * 1000).toLocaleDateString('ru-RU') : ''}${u.o ? ' · ' + plural(u.o, 'заявка', 'заявки', 'заявок') : ''}${r && r.n ? ' · реф №' + r.n : ''}${r && r.joined ? ' · привёл ' + r.joined : ''}</div>
+      ${open ? `<div class="obody">
+        ${r ? `<div class="refstats"><div><b>${r.bal}</b><span>монеток</span></div><div><b>${r.joined}</b><span>перешли</span></div><div><b>${r.approved}</b><span>в клубе</span></div><div><b>${r.earned}</b><span>заработал</span></div></div>
+          ${(r.friends || []).length ? `<div class="myi">${r.friends.map(f => `<div><span>${esc(f.name)}${f.un ? ' @' + esc(f.un) : ''}</span><span>${f.ok ? 'в клубе' : 'ждёт'}</span><b>${f.ord ? '🛒' : ''}</b></div>`).join('')}</div>` : ''}
+          ${(r.hist || []).length ? `<div class="myi hist">${r.hist.slice(0, 6).map(h => `<div><span>${esc(h.r)}</span><span>${new Date(h.t * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span><b class="${h.a > 0 ? 'plus' : ''}">${h.a > 0 ? '+' : ''}${h.a}</b></div>`).join('')}</div>` : ''}` : ''}
+        ${s0 === 'approved' ? `<div class="coinform"><input type="number" inputmode="numeric" placeholder="монеток (+/−)" data-cn="${u.id}"><input type="text" placeholder="за что" data-cw="${u.id}">
+          <button data-coinadd="${u.id}">Начислить</button></div>` : ''}
+        <div class="ordact">${u.un ? `<a class="pill ghost" href="https://t.me/${encodeURIComponent(u.un)}" target="_blank" rel="noopener">Написать</a>` : ''}
+          ${r && r.n ? `<button class="pill ghost" data-rcard="${u.id}">${PEND.card === u.id ? '✓ визитка придёт в чат' : '🖨 Визитка для печати'}</button>` : ''}
+          ${u.o ? `<button class="pill ghost" data-uorders="${u.id}">Его заявки →</button>` : ''}</div>
+        ${u.adm ? '<div class="admhint small">Админ — заблокировать нельзя</div>' : `<div class="ordact">
+          ${s0 === 'banned' ? `<button class="pill" data-uban="${u.id}:0">✅ Вернуть доступ</button>`
+            : s0 === 'approved' ? `<button class="pill warn" data-uban="${u.id}:1">⛔ В чёрный список</button>`
+            : `<button class="pill" data-uban="${u.id}:0">✅ Пустить</button><button class="pill warn" data-uban="${u.id}:1">⛔ В чёрный список</button>`}
+          ${pend ? `<button class="pill ghost" data-uban="${u.id}:">Отменить изменение</button>` : ''}</div>`}
+      </div>` : (s0 === 'pending' && !u.adm ? `<div class="ordact"><button class="pill" data-uban="${u.id}:0">✅ Пустить</button><button class="pill warn" data-uban="${u.id}:1">⛔</button>${pend ? `<button class="pill ghost" data-uban="${u.id}:">Отменить</button>` : ''}</div>` : '')}</div>`; };
+  return `${ORD.chat === false ? '<div class="prenote"><div><b>Чат рефералки не подключён</b><span>Добавь бота админом в чат КЛСД с правом «Пригласительные ссылки» и напиши там /setchat.</span></div></div>' : ''}
+    <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="uq" type="search" placeholder="Имя, @ник или ID" value="${esc(el._uq || '')}" autocomplete="off"></label>
     <div class="admsec"><h3>Пользователи</h3>
       <div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) =>
@@ -1674,6 +1730,47 @@ function admBatchView(){   // текущий общий сбор: коротко
   return `<div class="admsec"><h3>Сбор ${c.start.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}${b ? ' → заказ №' + b.n : ''}</h3>
     <div class="admhint">${now < c.close ? '🟢 приём заявок идёт до ' + f(c.close) : 'приём закрыт ' + f(c.close)}${b ? ' · ' + plural(b.cnt, 'заявка', 'заявки', 'заявок') : ' · заявок пока нет'}. Начать или закончить приём — во вкладке «Магазин».</div></div>`;
 }
+function todoList(){   // что ждёт админа: [ключ, число, заголовок, подпись, переход]
+  const os = (ORD && ORD.orders) || [], us = (ORD && ORD.users) || [];
+  const nw = os.filter(o => o.st === 'new'), unp = os.filter(o => !o.pd && !['cancelled', 'reserved', 'done'].includes(o.st));
+  const req = us.filter(u => u.st === 'pending'), addr = os.filter(o => (o.c || '').includes('📍') && o.st === 'ready');
+  return [['new', nw.length, 'Новые заявки', 'подтвердить наличие', 'batches:orders:new'],
+    ['unpaid', unp.length, 'Не оплачены', rub(unp.reduce((a, o) => a + o.s - (o.co || 0), 0)) + ' к получению', 'batches:orders:unpaid'],
+    ['req', req.length, 'Просят доступ', 'пустить или в чёрный список', 'users::req'],
+    ['addr', addr.length, 'Пришёл адрес', addr[0] ? `заявка №${addr[0].cn} · ${esc(addr[0].u[1] || '')}` : '', 'batches:orders:addr']].filter(x => x[1]);
+}
+function todoCount(){ return todoList().filter(x => x[0] !== 'unpaid').reduce((a, x) => a + x[1], 0); }
+function admTodoView(el){
+  if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю…</div>'; }
+  if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
+  // главный заказ: последний общий, где ещё не всё выдано; нет такого — идущий или ближайший сбор
+  const now = new Date(), cs = allCycles(now);
+  let b = (ORD.batches || []).filter(x => x.k === 'common' && x.done < x.cnt).sort((a, b2) => b2.n - a.n)[0];
+  let c = b && b.s ? { start: new Date(b.s * 1000), close: new Date(b.c * 1000) } : (cs.find(x => now < x.close) || curBatch(now));
+  if (!b && c){ const key = Math.floor(+c.start / 1000); b = (ORD.batches || []).find(x => x.k === 'common' && Math.abs(x.s - key) < 3600); }
+  const pend = b && (PEND.bst || []).find(x => x[0] === b.n), cur = pend ? pend[1] : b && b.st;
+  const nxt = b ? (BATCH_STEPS[BATCH_STEPS.findIndex(x => x[0] === cur) + 1] || null) : null;
+  const ind = (ORD.batches || []).filter(x => x.k === 'ind' && x.done < x.cnt);
+  const f = d => d.toLocaleString('ru-RU', { weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const list = todoList();
+  return `${c ? `<div class="todob"><div class="tbh"><b>${b ? 'Заказ №' + b.n : 'Сбор ' + c.start.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}</b>
+      <span>общий · сбор ${c.start.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}</span></div>
+    <div class="tbs"><i class="${now >= c.start && now < c.close ? 'on' : ''}"></i>${now < c.start ? 'Приём начнётся ' + f(c.start) : now < c.close ? 'Приём заявок до ' + f(c.close) : cur ? BATCH_STEPS.find(x => x[0] === cur)[1] : 'Приём закрыт ' + f(c.close)}${pend ? ' · <b>не сохранено</b>' : ''}</div>
+    <div class="tbn"><div><small>заявок</small><b>${b ? b.cnt : 0}</b></div><div><small>сумма</small><b>${rub(b ? b.sum : 0)}</b></div><div><small>оплачено</small><b>${b ? b.paid + '/' + b.cnt : '—'}</b></div></div>
+    ${b && nxt ? `<button class="tbgo" data-bst="${b.n}:${nxt[0]}">Следующий этап: ${nxt[1]} →</button>` : ''}
+    ${pend ? `<button class="more" data-bst="${b.n}:">Отменить изменение</button>` : ''}</div>` : ''}
+    ${ind.length ? `<button class="todoi wide" data-todo="batches::">⚡ ${plural(ind.length, 'индивидуальный заказ', 'индивидуальных заказа', 'индивидуальных заказов')} в работе <span class="chev">›</span></button>` : ''}
+    <div class="lbl">Ждут тебя</div>
+    ${list.length ? `<div class="todol">${list.map(([k, n, t, sub, go]) => `<button class="todoi" data-todo="${go}"><span class="tn t-${k}">${n}</span>
+      <span class="tt"><b>${t}</b><small>${sub}</small></span><span class="chev">›</span></button>`).join('')}</div>`
+      : '<div class="empty small">Всё разобрано 🙂</div>'}`;
+}
+function admOrdersTab(el){
+  const sub = el._osub || 'batches';
+  return `<div class="seg2" role="tablist"><button role="tab" data-osub="batches" aria-selected="${sub === 'batches'}">Заказы</button>
+    <button role="tab" data-osub="orders" aria-selected="${sub === 'orders'}">Все заявки</button></div>
+    ${sub === 'orders' ? admOrdersView(el) : admBatchesView(el)}`;
+}
 function admBatchesView(el){   // заказы поставщику: общие (по сбору) и индивидуальные; этап — всем заявкам заказа
   if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю…</div>'; }
   if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
@@ -1682,7 +1779,7 @@ function admBatchesView(el){   // заказы поставщику: общие 
   const FL = { open: ['Текущие', b => !isDone(b)], common: ['Общие', b => b.k === 'common'], ind: ['⚡ Индивидуальные', b => b.k === 'ind'], all: ['Все', () => true] };
   const list = bs.filter(FL[f][1]), now = Date.now() / 1000;
   const d = t => new Date(t * 1000).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  return `${admBatchView()}<div class="admsec"><div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) =>
+  return `<div class="admsec"><div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) =>
       `<button data-bf="${k}" aria-pressed="${k === f}">${t} <small>${bs.filter(fn).length}</small></button>`).join('')}</div>
     ${list.map(b => { const pend = (PEND.bst || []).find(x => x[0] === b.n), cur = pend ? pend[1] : b.st, open = (el._bopen || {})[b.n];
       const mem = (ORD.orders || []).filter(o => o.bn === b.n && o.st !== 'cancelled');
@@ -1703,15 +1800,16 @@ function admOrdersView(el){
   const f = el._of || 'open';
   const FL = { open: ['Открытые', o => !['done', 'cancelled'].includes(o.st)], reserved: ['Резерв', o => o.st === 'reserved'],
     new: ['Новые', o => o.st === 'new'], work: ['В работе', o => ['confirmed', 'supplier', 'transit', 'sorting', 'ready'].includes(o.st)],
-    unpaid: ['Не оплачены', o => !o.pd && !['cancelled', 'reserved'].includes(o.st)], all: ['Все', () => true] };
+    unpaid: ['Не оплачены', o => !o.pd && !['cancelled', 'reserved'].includes(o.st)], addr: ['📍 Адрес', o => (o.c || '').includes('📍') && !['done', 'cancelled'].includes(o.st)], all: ['Все', () => true] };
   const st = o => (PEND.st.find(x => x[0] === o.n) || [])[1] || o.st;
   const pd = o => { const x = (PEND.paid || []).find(x => x[0] === o.n); return x ? x[1] : (o.pd || 0); };
-  const list = ORD.orders.filter(o => FL[f][1]({ ...o, st: st(o), pd: pd(o) }));
+  const byU = el._ouser, list = ORD.orders.filter(o => (!byU || o.u[0] === byU) && FL[f][1]({ ...o, st: st(o), pd: pd(o) }));
   const sum = list.reduce((a, o) => a + o.s, 0);
   const when = t => new Date(t * 1000).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   return `<div class="admsec">
     <div class="ordtop"><span>${ORD.demo ? 'демо-заявки для примера' : ORD.at ? 'обновлено ' + when(ORD.at) : 'заявок ещё не было'}</span><button class="pill ghost" data-adm="reload">↻ Обновить</button></div>
     <div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) => `<button data-ofil="${k}" aria-pressed="${k === f}">${t} <small>${ORD.orders.filter(o => fn({ ...o, st: st(o), pd: pd(o) })).length}</small></button>`).join('')}</div>
+    ${byU ? `<div class="ordtop"><span>Заявки: ${esc((ORD.orders.find(o => o.u[0] === byU) || { u: [0, ''] }).u[1] || String(byU))}</span><button class="pill ghost" data-ouser="">✕ все</button></div>` : ''}
     <div class="ordsum">${plural(list.length, 'заявка', 'заявки', 'заявок')} на ${rub(sum)}</div>
     ${list.map(o => { const s0 = st(o), p0 = pd(o), pend = s0 !== o.st || p0 !== (o.pd || 0), open = (el._oopen || {})[o.n];
       const cnt = o.i.reduce((a, i) => a + i.q, 0), who = o.u[2] ? '@' + o.u[2] : 'id ' + o.u[0];
@@ -1735,7 +1833,14 @@ function admOrdersView(el){
 /* ---- события админки ---- */
 function admEvent(e, el){
   const t = e.target;
-  const tab = t.closest('[data-atab]'); if (tab){ el._tab = tab.dataset.atab; drawSheet(el); return true; }
+  const tab = t.closest('[data-atab]'); if (tab){ el._tab = tab.dataset.atab; drawSheet(el); el.scrollTop = 0; return true; }
+  const ou = t.closest('[data-ouser]'); if (ou){ el._ouser = 0; drawSheet(el); return true; }
+  const so = t.closest('[data-sopen]'); if (so){ el._sopen = el._sopen || {}; el._sopen[so.dataset.sopen] = !el._sopen[so.dataset.sopen]; drawSheet(el); return true; }
+  const os2 = t.closest('[data-osub]'); if (os2){ el._osub = os2.dataset.osub; drawSheet(el); return true; }
+  const td = t.closest('[data-todo]'); if (td){ const [tb, sub, f] = td.dataset.todo.split(':'); el._tab = tb;
+    if (tb === 'batches'){ el._osub = sub || 'batches'; if (f) el._of = f; }
+    if (tb === 'users' && f) el._uf = f;
+    drawSheet(el); el.scrollTop = 0; return true; }
   const al = t.closest('[data-aline]'); if (al){ openSheet('aline', al.dataset.aline); return true; }
   const of = t.closest('[data-ofil]'); if (of){ el._of = of.dataset.ofil; drawSheet(el); return true; }
   const rr = t.closest('[data-rref]'); if (rr){ el._ropen = el._ropen || {}; el._ropen[rr.dataset.rref] = !el._ropen[rr.dataset.rref]; drawSheet(el); return true; }
@@ -1761,6 +1866,8 @@ function admEvent(e, el){
     if (a === 'reset') PEND.cyc = [];
     if (a === 'undo') delete PEND.cyc;
     savePend(); hap(); refreshSheets(); admDot(); return true; }
+  const uo = t.closest('[data-uopen]'); if (uo){ el._uopen = el._uopen || {}; el._uopen[uo.dataset.uopen] = !el._uopen[uo.dataset.uopen]; drawSheet(el); filterUsers(el); return true; }
+  const ur = t.closest('[data-uorders]'); if (ur){ el._tab = 'batches'; el._osub = 'orders'; el._of = 'all'; el._ouser = +ur.dataset.uorders; drawSheet(el); el.scrollTop = 0; return true; }
   const uf = t.closest('[data-uf]'); if (uf){ el._uf = uf.dataset.uf; drawSheet(el); filterUsers(el); return true; }
   const ub = t.closest('[data-uban]'); if (ub){ const [id, v] = ub.dataset.uban.split(':'), n = +id, u = ORD && (ORD.users || []).find(x => x.id === n);
     PEND.ban = (PEND.ban || []).filter(x => x[0] !== n);
