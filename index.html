@@ -520,6 +520,10 @@ pre.payload{text-align:left;background:var(--surface);border-radius:var(--r-s);p
 .uc .um{font-size:12px;color:var(--muted);margin-top:4px}
 .uc .ordact{margin-top:10px;padding:0;border:0}
 .uc .admhint{margin-top:8px}
+.mybatch{font-size:13px;color:var(--muted);margin-top:4px}.mybatch b{color:var(--ink);font-weight:600}
+.ordcom{display:grid;gap:6px;margin:10px 0 4px;font-size:12px;color:var(--muted)}
+.ordcom textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px;resize:vertical;user-select:text;-webkit-user-select:text}
+.ordi.bm{width:100%;text-align:left;background:none;border:0;color:inherit;cursor:pointer;padding:8px 0;border-bottom:1px solid var(--line)}
 </style>
 
 <div class="bgfx" aria-hidden="true"><canvas id="bgfx"></canvas></div>
@@ -1151,6 +1155,12 @@ const ST_USER = { new: ['Принят, ждёт подтверждения', '#4
   ready: ['Готов к получению', '#1b8f2f'], done: ['Выдан', '#7a7f8c'], cancelled: ['Отменён', '#a3001a'] };
 const FLOW = ['reserved', 'new', 'confirmed', 'supplier', 'transit', 'sorting', 'ready', 'done'];
 const TRACK_STEPS = [['supplier', 'На сборке у поставщика'], ['transit', 'В пути'], ['sorting', 'На сортировке'], ['ready', 'Готов к получению']];
+const BATCH_ST = { supplier: 'у поставщика', transit: 'в пути', sorting: 'на сортировке', ready: 'готов к получению' };
+function batchLine(o){   // в каком заказе заявка и что с ним
+  const now = Date.now() / 1000;
+  const st = BATCH_ST[o.bst] || (o.bk === 'ind' ? 'собираем' : o.bc && now < o.bc ? 'идёт приём заявок' : o.bc ? 'приём закрыт, оформляем' : 'собираем');
+  const kind = o.bk === 'ind' ? '⚡ индивидуальный' : 'общий' + (o.bs ? ' · сбор ' + new Date(o.bs * 1000).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) : '');
+  return `Заказ №${o.bn} · ${kind} · <b>${st}</b>`; }
 function trackHtml(o){   // отслеживание: оплата + этапы доставки
   if (o.st === 'cancelled' || o.st === 'reserved') return '';
   const at = FLOW.indexOf(o.st), cur = TRACK_STEPS.findIndex(([k]) => k === o.st);
@@ -1159,7 +1169,7 @@ function trackHtml(o){   // отслеживание: оплата + этапы 
 }
 const busyTyping = () => { const a = document.activeElement; return a && /^(INPUT|TEXTAREA)$/.test(a.tagName); };
 async function loadMy(quiet){   // quiet — фоновая проверка: перерисовать, только если что-то поменялось
-  if (DEMO && !UKEY.length){ MY = { at: Date.now() / 1000, orders: [{ n: 7, st: 'transit', pd: 1, t: Date.now() / 1000 - 3600, s: 3150, d: 'pickup', c: '', ed: false,
+  if (DEMO && !UKEY.length){ MY = { at: Date.now() / 1000, orders: [{ n: 7, cn: 7, bn: 3, bk: 'common', bst: 'transit', bs: Date.now() / 1000 - 6 * 86400, bc: Date.now() / 1000 - 3 * 86400, st: 'transit', pd: 1, t: Date.now() / 1000 - 3600, s: 3150, d: 'pickup', c: '', ed: false,
     i: Object.values(ITEMS).slice(0, 3).map(x => ({ id: x.it[0], v: 0, q: 2, price: x.it[2], title: x.it[1] })) }],
     me: { bal: 320, on: true, cfg: { ref_join: 150, ref_pct: 5, ref_cap: 15 }, ref: null, hist: [{ t: Date.now() / 1000 - 9e4, a: 150, r: 'друг Аня в клубе' }, { t: Date.now() / 1000 - 4e4, a: 170, r: 'заказ друга Аня №5' }] } }; return; }
   if (!UKEY.length){ myErr = 'Профиль откроется, когда бот обновит твою кнопку «🛒 Магазин» — отправь ему /start'; return; }
@@ -1192,7 +1202,8 @@ function meView(el){
   const sent = store.get('klsd.sent', null), fresh = sent && MY.at * 1000 < sent.at && Date.now() - sent.at < 15 * 60e3;
   const cur = MY.orders.filter(o => !['done', 'cancelled'].includes(o.st)), old = MY.orders.filter(o => ['done', 'cancelled'].includes(o.st));
   const card = (o, full) => { const [t, c] = ST_USER[o.st] || [o.st, '#888'];
-    return `<div class="myord"><div class="myh"><b>Заказ №${o.n}${o.ind ? ' ⚡' : ''}</b><span class="ost2" style="--c:${c}">${t}</span></div>
+    return `<div class="myord"><div class="myh"><b>Заявка №${o.cn || o.n}${o.ind ? ' ⚡' : ''}</b><span class="ost2" style="--c:${c}">${t}</span></div>
+      ${o.bn && o.st !== 'cancelled' ? `<div class="mybatch">${batchLine(o)}</div>` : ''}
       <div class="mym">${new Date(o.t * 1000).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} ${PICKUP ? ' · ' + (o.d === 'courier' ? 'доставка' : 'самовывоз') : ''}</div>
       ${full ? `<div class="myi">${o.i.map(i => `<div><span>${esc(i.title)}</span><span>× ${i.q}</span><b>${rub(i.price * i.q)}</b></div>`).join('')}</div>
       ${o.c ? `<div class="mym">💬 ${esc(o.c)}</div>` : ''}` : ''}
@@ -1201,12 +1212,13 @@ function meView(el){
       ${o.st !== 'cancelled' ? (full ? trackHtml(o) : `<span class="paychip${o.pd ? ' ok' : ''}">${o.pd ? '💰 Оплачен' : 'Не оплачен'}</span>`) : ''}
       ${full && o.ed ? `<div class="mybtns"><button data-me="edit" data-n="${o.n}">Редактировать</button>
         <button class="${el._cancel === o.n ? 'armed' : ''}" data-me="cancel" data-n="${o.n}">${el._cancel === o.n ? 'Точно отменить?' : 'Отменить'}</button></div>` :
-        full && !o.ed ? `<div class="mym">Заказ уже у поставщика — изменить его нельзя. Если что-то срочное, напиши продавцу.</div>` : ''}</div>`; };
+        full && !o.ed ? `<div class="mym">Заказ уже у поставщика — изменить заявку нельзя. Если что-то срочное, напиши продавцу.</div>` : ''}</div>`; };
   return `<div class="inner pad">${head}
     ${fresh ? `<div class="prenote"><div><b>Заказ отправлен</b><span>Здесь он появится через минуту-две. Если что-то не так (например, позиция закончилась), бот напишет в чат.</span></div></div>` : ''}
-    <div class="lbl">Текущий заказ</div>
-    ${cur.length ? cur.map(o => card(o, true)).join('') : `<div class="empty small">активных заказов нет</div>`}
-    ${old.length ? `<div class="lbl">История</div>${old.slice(0, 15).map(o => card(o, false)).join('')}` : ''}
+    <div class="lbl">Текущая заявка</div>
+    ${cur.length ? cur.map(o => card(o, true)).join('') : `<div class="empty small">активных заявок нет</div>`}
+    ${old.length ? `<div class="lbl">Все заявки · ${old.length}</div>${old.slice(0, el._allOld ? 999 : 10).map(o => card(o, false)).join('')}
+      ${old.length > 10 && !el._allOld ? '<button class="more" data-me="allold">Показать все</button>' : ''}` : ''}
     ${refBlock(el)}
   </div>`;
 }
@@ -1252,6 +1264,7 @@ function meEvent(e, el){
   const a = b.dataset.me, n = +b.dataset.n, o = MY && MY.orders.find(x => x.n === n);
   if (a === 'reload'){ MY = null; myErr = ''; drawSheet(el); loadMy(); return true; }
   if (a === 'flip'){ setFlip(el, !el._flip); hap(); return true; }
+  if (a === 'allold'){ el._allOld = true; drawSheet(el); return true; }
   if (a === 'pq'){ el._pq = Math.max(5, Math.min(200, (el._pq || 10) + +b.dataset.d)); drawSheet(el); return true; }
   if (a === 'refnew' || a === 'print'){
     const p = a === 'refnew' ? { ref: 'create' } : { ref: 'print', qty: el._pq || 10 };
@@ -1426,8 +1439,9 @@ const DEMO = !TG && (location.protocol === 'file:' || /claude|localhost|127\.0\.
 const IS_ADMIN = !!ADMKEY || DEMO;
 let PEND = store.get('klsd.pend', null) || { price: {}, hide: {}, banners: {}, nophoto: [], photo: [], st: [], paid: [], ban: [] };
 PEND.paid = PEND.paid || [];
+if (PEND.bst && !Array.isArray(PEND.bst[0])) delete PEND.bst;   // старый формат (до «Заказов»)
 const pendCount = () => Object.keys(PEND.price).length + Object.keys(PEND.hide).length + Object.keys(PEND.banners).length
-  + (PEND.min_order ? 1 : 0) + Object.keys(PEND.ind || {}).length + (PEND.coin || []).length + (PEND.ban || []).length + (PEND.cyc !== undefined ? 1 : 0) + (PEND.bst ? 1 : 0) + (PEND.card ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length + (PEND.paid || []).length;
+  + (PEND.min_order ? 1 : 0) + Object.keys(PEND.ind || {}).length + (PEND.coin || []).length + (PEND.ban || []).length + (PEND.cyc !== undefined ? 1 : 0) + (PEND.bst ? PEND.bst.length : 0) + Object.keys(PEND.com || {}).length + (PEND.card ? 1 : 0) + PEND.nophoto.length + PEND.photo.length + PEND.st.length + (PEND.paid || []).length;
 const savePend = () => store.set('klsd.pend', PEND);
 const ADM_STATUS = { reserved: ['📌 Резерв', '#b07f00'], new: ['🆕 Новый', '#4f6bff'], confirmed: ['✅ Подтверждён', '#1b8f2f'],
   supplier: ['🏭 У поставщика', '#7a4fff'], transit: ['🚚 В пути', '#0b8aa8'], sorting: ['🗂 На сортировке', '#0b8aa8'],
@@ -1455,11 +1469,12 @@ function adminView(el){
     <div class="shead">${backSvg}<div class="ttl">Админ-панель${DEMO ? ' <span class="mock">демо</span>' : ''}</div></div>
     <div class="admtabs" role="tablist">
       <button role="tab" data-atab="shop" aria-selected="${tab === 'shop'}">Магазин</button>
-      <button role="tab" data-atab="orders" aria-selected="${tab === 'orders'}">Заказы</button>
+      <button role="tab" data-atab="batches" aria-selected="${tab === 'batches'}">Заказы</button>
+      <button role="tab" data-atab="orders" aria-selected="${tab === 'orders'}">Заявки</button>
       <button role="tab" data-atab="refs" aria-selected="${tab === 'refs'}">Рефералка</button>
       <button role="tab" data-atab="users" aria-selected="${tab === 'users'}">Люди</button>
     </div>
-    ${tab === 'shop' ? admShopView(el) : tab === 'refs' ? admRefsView(el) : tab === 'users' ? admUsersView(el) : admOrdersView(el)}
+    ${tab === 'shop' ? admShopView(el) : tab === 'refs' ? admRefsView(el) : tab === 'users' ? admUsersView(el) : tab === 'batches' ? admBatchesView(el) : admOrdersView(el)}
     ${admSaveBar()}
   </div>`;
 }
@@ -1543,10 +1558,12 @@ function alineView(el){
 let ORD = null, ordErr = '', ordLoading = false;
 const DEMO_ORDERS = () => { const now = Math.floor(Date.now() / 1000), any = Object.values(ITEMS).filter(x => x.l.cat === 'salt').slice(0, 40);
   const mk = (n, st, ago, name, user, idx, d) => { const its = idx.map(([k, q]) => { const x = any[k % any.length]; return { title: split(x.it[1])[0] + ' (' + x.l.t + ')', q, price: x.it[2], src: srcOf(x.it, x.l) }; });
-    return { n, st, t: now - ago, u: [100 + n, name, user], i: its, s: its.reduce((a, i) => a + i.price * i.q, 0), d, c: n === 14 ? 'после 18, позвоню' : '', pd: n === 12 ? 1 : 0, b: '04.12' }; };
+    return { n, st, t: now - ago, u: [100 + n, name, user], i: its, s: its.reduce((a, i) => a + i.price * i.q, 0), d, c: n === 14 ? 'после 18, позвоню' : '', pd: n === 12 ? 1 : 0, cn: n - 9, bn: n === 13 ? 2 : n === 11 ? 1 : 3, ind: n === 13 ? 1 : 0 }; };
   const users = [[101, 'Аня', 'anya_k', 'approved', 3], [102, 'Олег', 'oleg77', 'approved', 1], [103, 'Денис', 'den_vape', 'banned', 0], [104, 'Лиза', '', 'pending', 0], [1, 'Илья', 'admin', 'approved', 0, 1]]
     .map(([id, n, un, st, o, adm]) => ({ id, n, un, st, o, adm: adm || 0, t: now - id * 3600 }));
-  return { at: now, demo: true, users, orders: [mk(15, 'reserved', 3600, 'Денис', 'den_vape', [[3, 2], [7, 3]], 'pickup'), mk(14, 'new', 86400, 'Аня', 'anya_k', [[1, 4], [9, 2], [12, 1]], 'courier'),
+  const nx = Math.floor(Date.now() / 1000), B = (n, k, st, cnt, sum, paid, done, s0, c0) => ({ n, k, st, cnt, sum, paid, done, s: s0 || 0, c: c0 || 0, t: nx });
+  const batches = [B(1, 'common', 'ready', 1, 6000, 1, 1, nx - 20 * 86400, nx - 17 * 86400), B(2, 'ind', '', 1, 12000, 0, 0), B(3, 'common', 'transit', 3, 15000, 1, 0, nx - 6 * 86400, nx - 3 * 86400)];
+  return { at: now, demo: true, users, batches, orders: [mk(15, 'reserved', 3600, 'Денис', 'den_vape', [[3, 2], [7, 3]], 'pickup'), mk(14, 'new', 86400, 'Аня', 'anya_k', [[1, 4], [9, 2], [12, 1]], 'courier'),
     mk(13, 'confirmed', 2 * 86400, 'Макс', '', [[5, 6]], 'pickup'), mk(12, 'transit', 4 * 86400, 'Олег', 'oleg77', [[2, 3], [8, 2]], 'pickup'), mk(11, 'done', 9 * 86400, 'Аня', 'anya_k', [[4, 5]], 'pickup')] }; };
 async function unsealOrders(hexKey, b64){
   const raw = Uint8Array.from(atob(b64.trim()), c => c.charCodeAt(0)), key = new Uint8Array(hexKey.match(/../g).map(h => parseInt(h, 16)));
@@ -1577,7 +1594,7 @@ async function loadOrders(el){
 }
 async function pollOrders(){   // админка открыта на заказах/рефералке — подтягиваем новое без перезахода
   const el = stack.find(x => x.dataset.kind === 'admin');
-  if (!el || !['orders', 'refs', 'users'].includes(el._tab) || !ADMKEY || DEMO || ordLoading || busyTyping()) return;
+  if (!el || !['orders', 'refs', 'users', 'batches'].includes(el._tab) || !ADMKEY || DEMO || ordLoading || busyTyping()) return;
   try {
     const r = await fetch('orders.enc?' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
     const nw = await unsealOrders(ADMKEY, await r.text());
@@ -1650,21 +1667,38 @@ function curBatch(now = new Date()){   // последний общий сбор
 function batchStage(c){   // этап сбора: из настроек (поставил админ) или по самому «отстающему» заказу
   const key = Math.floor(+c.start / 1000), b = S && S.bst;
   return b && Math.abs(b.b - key) < 120 ? b.st : null; }
-function admBatchView(){   // этап всего общего сбора разом
+function admBatchView(){   // текущий общий сбор: коротко, где он и какой это заказ
   const now = new Date(), c = curBatch(now); if (!c) return '';
-  const key = Math.floor(+c.start / 1000), dd = c.start.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
-  const open = now < c.close, mine = (ORD.orders || []).filter(o => o.b === dd && !o.ind && !['cancelled', 'reserved'].includes(o.st));
-  const pend = PEND.bst && PEND.bst[0] === key ? PEND.bst[1] : null, cur = pend || batchStage(c);
+  const key = Math.floor(+c.start / 1000), b = (ORD.batches || []).find(x => x.k === 'common' && Math.abs(x.s - key) < 3600);
   const f = d => d.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-  return `<div class="admsec"><h3>Общий сбор ${dd}</h3>
-    <div class="admhint">${open ? '🟢 приём заявок идёт до ' + f(c.close) : 'приём закрыт ' + f(c.close)} · ${plural(mine.length, 'заказ', 'заказа', 'заказов')}
-      ${cur ? ' · этап: <b>' + BATCH_STEPS.find(x => x[0] === cur)[1] + '</b>' : ''}${pend ? ' · <b>не сохранено</b>' : ''}</div>
-    <div class="ordact">${BATCH_STEPS.map(([k, t]) => `<button class="pill ${cur === k ? 'sel' : 'ghost'}" data-bst="${key}:${k}">${t}</button>`).join('')}
-      ${pend ? '<button class="pill ghost" data-bst="">Отменить изменение</button>' : ''}</div>
-    <div class="admhint small">Этап ставится всем заказам этого сбора (кроме ⚡ индивидуальных) и показывается покупателям в баннере «Статус заказа». Начать или закончить приём — во вкладке «Магазин».</div></div>`;
+  return `<div class="admsec"><h3>Сбор ${c.start.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}${b ? ' → заказ №' + b.n : ''}</h3>
+    <div class="admhint">${now < c.close ? '🟢 приём заявок идёт до ' + f(c.close) : 'приём закрыт ' + f(c.close)}${b ? ' · ' + plural(b.cnt, 'заявка', 'заявки', 'заявок') : ' · заявок пока нет'}. Начать или закончить приём — во вкладке «Магазин».</div></div>`;
+}
+function admBatchesView(el){   // заказы поставщику: общие (по сбору) и индивидуальные; этап — всем заявкам заказа
+  if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю…</div>'; }
+  if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
+  const bs = (ORD.batches || []).slice().sort((a, b) => b.n - a.n);
+  const f = el._bf || 'open', isDone = b => b.done >= b.cnt;
+  const FL = { open: ['Текущие', b => !isDone(b)], common: ['Общие', b => b.k === 'common'], ind: ['⚡ Индивидуальные', b => b.k === 'ind'], all: ['Все', () => true] };
+  const list = bs.filter(FL[f][1]), now = Date.now() / 1000;
+  const d = t => new Date(t * 1000).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return `${admBatchView()}<div class="admsec"><div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) =>
+      `<button data-bf="${k}" aria-pressed="${k === f}">${t} <small>${bs.filter(fn).length}</small></button>`).join('')}</div>
+    ${list.map(b => { const pend = (PEND.bst || []).find(x => x[0] === b.n), cur = pend ? pend[1] : b.st, open = (el._bopen || {})[b.n];
+      const mem = (ORD.orders || []).filter(o => o.bn === b.n && o.st !== 'cancelled');
+      const phase = isDone(b) ? '🤝 всё выдано' : cur ? BATCH_STEPS.find(x => x[0] === cur)[1] : b.k === 'common' && b.c && now < b.c ? '🟢 идёт приём до ' + d(b.c) : 'собираем';
+      return `<div class="ord ${open ? 'open' : ''}"><button class="ordh" data-bopen="${b.n}"><b>Заказ №${b.n}</b>
+        <span class="ost2" style="--c:${b.k === 'ind' ? '#b07f00' : '#4f6bff'}">${b.k === 'ind' ? '⚡ индивидуальный' : 'общий' + (b.s ? ' · сбор ' + new Date(b.s * 1000).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) : '')}</span>
+        <span class="ordw">${phase}${pend ? ' · <b>не сохранено</b>' : ''}</span>
+        <span class="ordm">${plural(b.cnt, 'заявка', 'заявки', 'заявок')} · оплачено ${b.paid}/${b.cnt}${b.done ? ' · выдано ' + b.done : ''}</span><span class="ords">${rub(b.sum)}</span></button>
+        ${open ? `<div class="ordb">
+          ${mem.map(o => `<button class="ordi bm" data-gotoord="${o.n}"><span>Заявка №${o.cn} · ${esc(o.u[1] || o.u[2] || o.u[0])}</span><span>${ADM_STATUS[o.st] ? ADM_STATUS[o.st][0] : o.st}${o.pd ? ' · 💰' : ''}</span><span>${rub(o.s)}</span></button>`).join('') || '<div class="empty small">заявки ещё не подгрузились</div>'}
+          ${isDone(b) ? '' : `<div class="ordact">${BATCH_STEPS.map(([k, t]) => `<button class="pill ${cur === k ? 'sel' : 'ghost'}" data-bst="${b.n}:${k}">${t}</button>`).join('')}
+            ${pend ? `<button class="pill ghost" data-bst="${b.n}:">Отменить изменение</button>` : ''}</div>
+          <div class="admhint small">Этап ставится всем заявкам этого заказа. «Выдан» и оплата — у каждой заявки во вкладке «Заявки».</div>`}</div>` : ''}</div>`; }).join('') || '<div class="empty small">Заказов пока нет</div>'}</div>`;
 }
 function admOrdersView(el){
-  if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю заказы…</div>'; }
+  if (!ORD && !ordErr){ loadOrders(el); return '<div class="empty small">Загружаю заявки…</div>'; }
   if (ordErr) return `<div class="empty small">${esc(ordErr)}</div><button class="more" data-adm="reload">Ещё раз</button>`;
   const f = el._of || 'open';
   const FL = { open: ['Открытые', o => !['done', 'cancelled'].includes(o.st)], reserved: ['Резерв', o => o.st === 'reserved'],
@@ -1675,24 +1709,25 @@ function admOrdersView(el){
   const list = ORD.orders.filter(o => FL[f][1]({ ...o, st: st(o), pd: pd(o) }));
   const sum = list.reduce((a, o) => a + o.s, 0);
   const when = t => new Date(t * 1000).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  return `${admBatchView()}<div class="admsec">
-    <div class="ordtop"><span>${ORD.demo ? 'демо-заказы для примера' : ORD.at ? 'обновлено ' + when(ORD.at) : 'заказов ещё не было'}</span><button class="pill ghost" data-adm="reload">↻ Обновить</button></div>
+  return `<div class="admsec">
+    <div class="ordtop"><span>${ORD.demo ? 'демо-заявки для примера' : ORD.at ? 'обновлено ' + when(ORD.at) : 'заявок ещё не было'}</span><button class="pill ghost" data-adm="reload">↻ Обновить</button></div>
     <div class="ofil">${Object.entries(FL).map(([k, [t, fn]]) => `<button data-ofil="${k}" aria-pressed="${k === f}">${t} <small>${ORD.orders.filter(o => fn({ ...o, st: st(o), pd: pd(o) })).length}</small></button>`).join('')}</div>
-    <div class="ordsum">${plural(list.length, 'заказ', 'заказа', 'заказов')} на ${rub(sum)}</div>
+    <div class="ordsum">${plural(list.length, 'заявка', 'заявки', 'заявок')} на ${rub(sum)}</div>
     ${list.map(o => { const s0 = st(o), p0 = pd(o), pend = s0 !== o.st || p0 !== (o.pd || 0), open = (el._oopen || {})[o.n];
       const cnt = o.i.reduce((a, i) => a + i.q, 0), who = o.u[2] ? '@' + o.u[2] : 'id ' + o.u[0];
       return `<div class="ord ${open ? 'open' : ''}">
-        <button class="ordh" data-ord="${o.n}"><b>№${o.n}${o.ind ? ' ⚡' : ''}</b><span class="ost2" style="--c:${ADM_STATUS[s0][1]}">${ADM_STATUS[s0][0]}${s0 !== 'cancelled' ? (p0 ? ' · 💰 оплачен' : ' · не оплачен') : ''}${pend ? ' · не сохранено' : ''}</span>
-          <span class="ordw">${esc(o.u[1] || '')} <small>${esc(who)}</small></span><span class="ordm">${when(o.t)} · ${plural(cnt, 'товар', 'товара', 'товаров')} · ${o.d === 'courier' ? 'доставка' : 'самовывоз'}</span>
-          <span class="ords">${rub(o.s)}</span>${o.b && !o.ind ? `<span class="ordbatch">сбор ${o.b}</span>` : ''}</button>
+        <button class="ordh" data-ord="${o.n}"><b>Заявка №${o.cn || '?'}${o.ind ? ' ⚡' : ''} <small>#${o.n}</small></b><span class="ost2" style="--c:${ADM_STATUS[s0][1]}">${ADM_STATUS[s0][0]}${s0 !== 'cancelled' ? (p0 ? ' · 💰 оплачен' : ' · не оплачен') : ''}${pend ? ' · не сохранено' : ''}</span>
+          <span class="ordw">${esc(o.u[1] || '')} <small>${esc(who)}</small></span><span class="ordm">${when(o.t)} · ${plural(cnt, 'товар', 'товара', 'товаров')}${PICKUP ? ' · ' + (o.d === 'courier' ? 'доставка' : 'самовывоз') : ''}</span>
+          <span class="ords">${rub(o.s)}</span>${o.bn ? `<span class="ordbatch">заказ №${o.bn}${o.ind ? ' ⚡' : ''}</span>` : ''}</button>
         ${open ? `<div class="ordb">${o.i.map(i => `<div class="ordi"><span>${esc(i.title)}</span><span>× ${i.q}</span><span>${rub(i.price * i.q)}</span></div>`).join('')}
-          ${o.c ? `<div class="ordc">💬 ${esc(o.c)}</div>` : ''}
+          <label class="ordcom"><span>💬 Комментарий / адрес${PEND.com && PEND.com[o.n] !== undefined ? ' · <b>не сохранено</b>' : ''}</span>
+            <textarea rows="2" data-adm="ocom" data-ocom="${o.n}" placeholder="адрес, подъезд, время…">${esc(PEND.com && PEND.com[o.n] !== undefined ? PEND.com[o.n] : (o.c || ''))}</textarea></label>
           <div class="ordact">${o.u[2] ? `<a class="pill ghost" href="https://t.me/${encodeURIComponent(o.u[2])}" target="_blank" rel="noopener">Написать</a>` : ''}
             ${o.st !== 'cancelled' ? `<button class="pill ${p0 ? 'sel' : 'ghost'}" data-opaid="${o.n}">${p0 ? '💰 Оплачен ✓' : '💰 Отметить оплату'}</button>` : ''}
             ${admNext(o.st).map(k => `<button class="pill ${k === 'cancelled' ? 'warn' : ''} ${s0 === k ? 'sel' : ''}" data-ost="${o.n}:${k}">${ADM_BTN[k]}</button>`).join('')}
             ${pend ? `<button class="pill ghost" data-ost="${o.n}:">Отменить изменение</button>` : ''}</div>
-          ${!o.ind && o.b && admNext(o.st).some(k => ['supplier', 'transit', 'sorting', 'ready'].includes(k)) ?
-            `<div class="admhint small">🏭 🚚 🗂 📦 ставятся сразу всем заказам сбора ${o.b}</div>` : ''}</div>` : ''}
+          ${o.bn && admNext(o.st).some(k => ['supplier', 'transit', 'sorting', 'ready'].includes(k)) ?
+            `<div class="admhint small">🏭 🚚 🗂 📦 — это этап всего заказа №${o.bn}: поставится всем его заявкам</div>` : ''}</div>` : ''}
       </div>`; }).join('') || '<div class="empty small">Тут пусто</div>'}
   </div>`;
 }
@@ -1710,9 +1745,15 @@ function admEvent(e, el){
     PEND.coin = (PEND.coin || []).concat([[u, v, why || 'от продавца']]); savePend(); hap(); refreshSheets(); admDot(); toast('Начислится после «Сохранить»'); return true; }
   const rc = t.closest('[data-rcard]'); if (rc){ PEND.card = PEND.card === +rc.dataset.rcard ? 0 : +rc.dataset.rcard; savePend(); hap(); refreshSheets(); admDot(); return true; }
   const oh = t.closest('[data-ord]'); if (oh){ el._oopen = el._oopen || {}; el._oopen[oh.dataset.ord] = !el._oopen[oh.dataset.ord]; drawSheet(el); return true; }
-  const bs = t.closest('[data-bst]'); if (bs){ const v = bs.dataset.bst;
-    if (!v) delete PEND.bst; else { const [k, st] = v.split(':'); PEND.bst = [+k, st]; }
+  const bs = t.closest('[data-bst]'); if (bs){ const [k, st] = bs.dataset.bst.split(':'), n = +k, b = ORD && (ORD.batches || []).find(x => x.n === n);
+    PEND.bst = (Array.isArray(PEND.bst) ? PEND.bst : []).filter(x => x[0] !== n);
+    if (st && (!b || b.st !== st)) PEND.bst.push([n, st]);
+    if (!PEND.bst.length) delete PEND.bst;
     savePend(); hap(); refreshSheets(); admDot(); return true; }
+  const bf = t.closest('[data-bf]'); if (bf){ el._bf = bf.dataset.bf; drawSheet(el); return true; }
+  const bo = t.closest('[data-bopen]'); if (bo){ el._bopen = el._bopen || {}; el._bopen[bo.dataset.bopen] = !el._bopen[bo.dataset.bopen]; drawSheet(el); return true; }
+  const go = t.closest('[data-gotoord]'); if (go){ el._tab = 'orders'; el._of = 'all'; el._oopen = { [go.dataset.gotoord]: true }; drawSheet(el);
+    requestAnimationFrame(() => { const x = el.querySelector(`[data-ord="${go.dataset.gotoord}"]`); if (x) x.scrollIntoView({ block: 'center' }); }); return true; }
   const cy = t.closest('[data-cyc]'); if (cy){ const a = cy.dataset.cyc, now = new Date(), cs = allCycles(now);
     const open = cs.find(c => now >= c.start && now < c.close), nx = cs.find(c => c.start > now), sec = d => Math.floor(+d / 1000);
     if (a === 'stop' && open) PEND.cyc = [sec(open.start), sec(now)];
@@ -1746,6 +1787,13 @@ function admInput(e){
   const a = e.target.closest('[data-adm]'); if (!a) return false;
   const kind = a.dataset.adm, tg = a.dataset.t;
   if (kind === 'aq'){ return false; }
+  if (a.dataset.ocom){ const n = +a.dataset.ocom, o = ORD && ORD.orders.find(x => x.n === n);
+    PEND.com = PEND.com || {};
+    if (o && a.value === (o.c || '')) delete PEND.com[n]; else PEND.com[n] = a.value.slice(0, 600);
+    savePend(); admDot();
+    const bar = e.target.closest('.adm'); if (bar){ const old = bar.querySelector('.admsave'), nu = admSaveBar();
+      if (old) old.outerHTML = nu || ''; else if (nu) bar.insertAdjacentHTML('beforeend', nu); }
+    return true; }
   if (kind === 'cycs' || kind === 'cycc'){ const v = Math.floor(new Date(a.value).getTime() / 1000); if (!v) return true;
     const now = new Date(), cs = allCycles(now), cur = cs.find(c => now >= c.start && now < c.close) || cs.find(c => c.start > now);
     const pc = PEND.cyc && PEND.cyc.length ? PEND.cyc.slice() : [Math.floor(+cur.start / 1000), Math.floor(+cur.close / 1000)];
@@ -1780,7 +1828,8 @@ function admPayload(){
   if (Object.keys(PEND.banners).length) p.banners = PEND.banners;
   if (PEND.min_order) p.min_order = PEND.min_order;
   if (PEND.cyc !== undefined) p.cyc = PEND.cyc;
-  if (PEND.bst) p.bst = PEND.bst;
+  if (PEND.bst && PEND.bst.length) p.bst = PEND.bst;
+  if (PEND.com && Object.keys(PEND.com).length) p.com = Object.entries(PEND.com).map(([n, c]) => [+n, c]);
   if (Object.keys(PEND.ind || {}).length) p.ind = PEND.ind;
   if ((PEND.coin || []).length) p.coin = PEND.coin;
   if (PEND.card) p.card = PEND.card;
@@ -1803,8 +1852,9 @@ function admSave(){
   for (const [n, b] of Object.entries(p.banners || {})){ S.banners = S.banners || {}; S.banners[n] = Object.assign(S.banners[n] || {}, b); }
   if (p.min_order) S.min_order = p.min_order;
   if (p.cyc !== undefined){ if (p.cyc.length) S.cyc = p.cyc; else delete S.cyc; }
-  if (p.bst){ S.bst = { b: p.bst[0], st: p.bst[1] }; const dd = new Date(p.bst[0] * 1000).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
-    if (ORD) for (const o of ORD.orders) if (o.b === dd && !o.ind && !['cancelled', 'reserved', 'done'].includes(o.st) && FLOW.indexOf(o.st) < FLOW.indexOf(p.bst[1])) o.st = p.bst[1]; }
+  if (p.bst && ORD) for (const [n, st] of p.bst){ const b = (ORD.batches || []).find(x => x.n === n); if (b){ b.st = st; if (b.k === 'common' && b.s) S.bst = { b: b.s, st }; }
+    for (const o of ORD.orders) if (o.bn === n && !['cancelled', 'reserved', 'done'].includes(o.st) && FLOW.indexOf(o.st) < FLOW.indexOf(st)) o.st = st; }
+  if (p.com && ORD) for (const [n, c] of p.com){ const o = ORD.orders.find(x => x.n === n); if (o) o.c = c; }
   Object.assign(S, p.ind || {});
   for (const t of p.nophoto || []) delete (S[t.startsWith('L:') ? 'lphoto' : 'iphoto'] || {})[t.replace(/^L:/, '')];
   if (ORD) for (const [n, st] of p.st || []){ const o = ORD.orders.find(x => x.n === n); if (o) o.st = st; }
