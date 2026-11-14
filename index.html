@@ -574,7 +574,8 @@ let C, ITEMS = {}, LINES = {}, RAW_CATALOG = null, ADM_LINES = {}, CATNAME = {};
 let S = {};              // настройки админа: settings.json (свои цены, скрытые позиции, фото, баннеры, минималка)
 let state = { cat: 'home', brand: null, q: '', sort: 'name', shown: 40, view: [], wh: store.get('klsd.wh', 0) };
 let cart = store.get('klsd.cart', {});           // "itemId|var" -> qty
-let delivery = store.get('klsd.delivery', 'pickup');
+const PICKUP = false;   // самовывоза пока нет — продавец развозит сам. Появится склад — поставить true, вернётся выбор «Самовывоз / Доставка»
+let delivery = PICKUP ? store.get('klsd.delivery', 'pickup') : 'courier';
 
 function split(name){ // "Apple Mint /// Яблоко Мята" -> ["Яблоко Мята","Apple Mint"]
   const p = name.split('///').map(s => s.trim()).filter(Boolean);
@@ -1136,8 +1137,8 @@ function cartView(){
       ${useCoins ? `<div class="total pay"><span>К оплате</span><strong>${rub(t.s - c.max)}</strong></div>` : ''}`; })()}
     <div class="minbar ${t.s >= MIN_ORDER ? 'ok' : ''}"><div class="track"><i style="width:${Math.min(100, Math.round(t.s / MIN_ORDER * 100))}%"></i></div>
       <span>${t.s >= MIN_ORDER ? `Минимальная сумма ${rub(MIN_ORDER)} набрана` : `Минимальный заказ — ${rub(MIN_ORDER)}. Добавь ещё ${rub(MIN_ORDER - t.s)}`}</span></div>
-    <div class="lbl">Получение</div>
-    <div class="seg"><button data-del="pickup" aria-pressed="${delivery === 'pickup'}">Самовывоз</button><button data-del="courier" aria-pressed="${delivery === 'courier'}">Доставка</button></div>
+    ${PICKUP ? `<div class="lbl">Получение</div>
+    <div class="seg"><button data-del="pickup" aria-pressed="${delivery === 'pickup'}">Самовывоз</button><button data-del="courier" aria-pressed="${delivery === 'courier'}">Доставка</button></div>` : ''}
     <label class="field" for="comment"><div class="lbl">Комментарий</div><textarea id="comment" rows="2" placeholder="нацарапай заметочьку">${esc(store.get('klsd.comment', ''))}</textarea></label>
   </div>`;
 }
@@ -1192,7 +1193,7 @@ function meView(el){
   const cur = MY.orders.filter(o => !['done', 'cancelled'].includes(o.st)), old = MY.orders.filter(o => ['done', 'cancelled'].includes(o.st));
   const card = (o, full) => { const [t, c] = ST_USER[o.st] || [o.st, '#888'];
     return `<div class="myord"><div class="myh"><b>Заказ №${o.n}${o.ind ? ' ⚡' : ''}</b><span class="ost2" style="--c:${c}">${t}</span></div>
-      <div class="mym">${new Date(o.t * 1000).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} · ${o.d === 'courier' ? 'доставка' : 'самовывоз'}</div>
+      <div class="mym">${new Date(o.t * 1000).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} ${PICKUP ? ' · ' + (o.d === 'courier' ? 'доставка' : 'самовывоз') : ''}</div>
       ${full ? `<div class="myi">${o.i.map(i => `<div><span>${esc(i.title)}</span><span>× ${i.q}</span><b>${rub(i.price * i.q)}</b></div>`).join('')}</div>
       ${o.c ? `<div class="mym">💬 ${esc(o.c)}</div>` : ''}` : ''}
       <div class="mytot"><span>Итого</span><b>${rub(o.s)}</b></div>
@@ -1260,7 +1261,7 @@ function meEvent(e, el){
   if (a === 'edit' && o){   // товары заказа — обратно в корзину; после отправки бот заменит заявку
     cart = {}; for (const i of o.i) if (ITEMS[i.id]) cart[i.id + '|' + i.v] = i.q;
     store.set('klsd.cart', cart); EDIT = n; store.set('klsd.edit', n); if (o.co){ useCoins = true; store.set('klsd.usecoins', true); }
-    if (o.d) { delivery = o.d; store.set('klsd.delivery', delivery); } store.set('klsd.comment', o.c || '');
+    if (o.d && PICKUP) { delivery = o.d; store.set('klsd.delivery', delivery); } store.set('klsd.comment', o.c || '');
     const lost = o.i.filter(i => !ITEMS[i.id]).length; if (lost) toast(`${plural(lost, 'позиции', 'позиций', 'позиций')} уже нет в наличии`);
     hap(); closeSheet(); openSheet('cart'); return true; }
   if (a === 'cancel' && o){
